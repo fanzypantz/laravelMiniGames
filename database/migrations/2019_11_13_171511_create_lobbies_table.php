@@ -15,7 +15,8 @@ class CreateLobbiesTable extends Migration
     {
         Schema::create('lobbies', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->char('url', 100);
+            $table->char('url', 100)->unique();
+            $table->char('gameType', 100);
             $table->json('gameState')->nullable();
             $table->timestamps();
         });

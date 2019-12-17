@@ -17,11 +17,6 @@ use Illuminate\Support\Facades\Auth;
 
 class LobbyController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
     private function getUser() {
         if(Auth::check()){
             return  Auth::user();
@@ -48,12 +43,6 @@ class LobbyController extends Controller
         }
     }
 
-    public function updateCharacter(Request $request, $lobbyId)
-    {
-        $characterName = strip_tags($request->input('character'));
-        broadcast(new ChangeCharacterEvent($characterName, $lobbyId))->toOthers();
-    }
-
     public function startLobby(Request $request)
     {
         $user = $this->getUser();
@@ -72,30 +61,6 @@ class LobbyController extends Controller
             $lobby->save();
         }
         return redirect()->route('lobby', ['id' => $lobbyName]);
-    }
-
-    public function startGame(Request $request, $lobbyId)
-    {
-        $game = $request->input('game');
-        broadcast(new StartGameEvent($lobbyId, $game))->toOthers();
-    }
-
-
-    public function restartGame(Request $request, $lobbyId)
-    {
-        broadcast(new RestartGameEvent($lobbyId))->toOthers();
-    }
-
-    public function gameMove(Request $request, $lobbyId)
-    {
-        $roll = $request->input('roll');
-        broadcast(new GameMoveEvent($lobbyId, $roll))->toOthers();
-    }
-
-    public function gameMessage(Request $request, $lobbyId)
-    {
-        $roll = $request->input('message');
-        broadcast(new GameMessageEvent($lobbyId, $roll))->toOthers();
     }
 
     public function lobby(Request $request, $lobbyId)

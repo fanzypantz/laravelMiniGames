@@ -1,0 +1,405 @@
+.player-name-opponent,
+.player-name-user
+    background-color: $bg
+    left: 50%
+    top: 20%
+    transform: translateX(-50%)
+    width: 200px
+    position: absolute
+    text-align: center
+
+.player-name-opponent
+    top: unset
+    bottom: 20%
+
+
+.snake
+    position: absolute
+    left: 50%
+    transform: translate(-50%, -50%)
+    transform-origin: 0 50%
+    z-index: 9
+    user-select: none
+
+
+.dropdown
+    z-index: 20
+    display: flex
+    flex-direction: column
+    align-content: center
+    justify-content: center
+
+    .buttons
+        position: absolute
+        top: 50%
+        left: 50%
+        transform: translate(-50%, -50%)
+        z-index: 22
+
+        button
+            margin: 20px 0
+
+.dropdown-current
+    z-index: 20
+
+.dropdown-select
+    width: 100%
+    display: flex
+    flex-wrap: wrap
+
+.dropdown-character
+    width: calc(100% / 7)
+
+    .dropdown-name
+        color: white
+        margin: -3px 0 0 0
+        background-color: $bg
+        line-height: 40px
+        height: 40px
+        text-align: center
+        text-overflow: ellipsis
+        white-space: nowrap
+        overflow: hidden
+
+    .dropdown-characterImage
+        width: 100%
+
+.selected-character
+    justify-content: space-between
+    align-items: center
+    display: flex
+    z-index: 1
+    position: absolute
+    top: 0
+    left: 0
+    height: 100vh
+    width: 100vw
+
+    .description
+        overflow-y: auto
+        margin: 0 0 0 200px
+
+    .opponent
+        margin: 0 200px 0 0
+
+.selected
+    filter: grayscale(1)
+
+.description
+    max-height: 100%
+    width: 400px
+
+    li
+        color: white
+        line-height: 30px
+        height: 30px
+        border-bottom: 2px solid $bg
+
+    .description-title
+        padding-left: 10px
+        display: inline-block
+        height: 30px
+        width: 110px
+        line-height: 30px
+        background-color: $bg
+        margin-right: 10px
+
+    .description-bullet
+        padding-left: 10px
+
+    .characterImage
+        display: flex
+        align-content: center
+        justify-content: center
+        border-bottom: none
+        height: 200px
+        transition: height ease-in-out 250ms
+
+        &:hover
+            height: 400px
+
+        img
+            height: 100%
+            width: 100%
+            object-fit: cover
+
+    .description-name
+        border-top: 2px solid $bg
+        text-align: center
+        font-size: 1.4em
+        padding: 10px 0
+
+.board
+    box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.65)
+    display: flex
+    flex-flow: row wrap-reverse
+    user-select: none
+    position: absolute
+    width: 80vh
+    height: 80vh
+    top: 50%
+    left: 50%
+    transform: translate(-50%, -50%)
+
+    .tile
+        position: relative
+        width: calc(100%/10)
+        height: calc(100%/10)
+        background-color: $dark-tile
+        box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.5)
+
+        p
+            text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.5)
+            pointer-events: none
+            position: absolute
+            z-index: 20
+            font-size: 1.3em
+            color: white
+            margin: 10px
+
+        &:nth-child(odd)
+            background-color: $light-tile
+
+    .oddRow:nth-of-type(odd)
+        background-color: $dark-tile
+
+    .oddRow:nth-of-type(even)
+        background-color: $light-tile
+
+.piece-character
+    z-index: 10
+    position: absolute
+    bottom: 50%
+    left: 50%
+    transform: translate(-50%, 50%)
+    border-radius: 50%
+    border: 2px solid $bg
+    width: 80%
+    box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.6)
+
+.current-character
+    z-index: 11
+
+
+#dice
+    color: black
+    z-index: 40
+    position: absolute
+    width: 50px
+    height: 50px
+    transform-style: preserve-3d
+
+    #front
+        transform: rotateY(0deg) translateZ(25px)
+    #right
+        transform: rotateY(90deg) translateZ(25px)
+    #back
+        transform: rotateY(180deg) translateZ(25px)
+    #left
+        transform: rotateY(-90deg) translateZ(25px)
+    #top
+        transform: rotateX(90deg) translateZ(25px)
+    #bottom
+        transform: rotateX(-90deg) translateZ(25px)
+
+
+    .diceFace
+        user-select: none
+        background-color: #ffffff
+        position: absolute
+        width: 50px
+        height: 50px
+        text-align: center
+        line-height: 50px
+        font-size: 30px
+        border: 2px solid black
+
+.card-container
+    z-index: 50
+    position: absolute
+    top: 0
+    left: 0
+    display: flex
+    flex-direction: column
+
+.game-message
+    display: flex
+    flex-direction: column
+    align-content: center
+    justify-content: center
+    background-color: $bg
+    width: 400px
+    min-height: 75px
+    padding: 0 40px
+    color: white
+    animation: hide 10s ease
+
+    p
+        text-align: center
+        font-size: 1.2em
+        font-weight: 700
+        margin: 0
+        animation: hide-text 10s ease
+
+@keyframes hide
+    90%
+        min-height: 75px
+        opacity: 1
+    100%
+        min-height: 0
+        opacity: 0
+
+@keyframes hide-text
+    90%
+        font-size: 1.2em
+        opacity: 1
+    100%
+        font-size: 0
+        opacity: 0
+
+.victory-text
+    pointer-events: none
+    background-color: $bg
+    z-index: 10
+    position: absolute
+    top: 50%
+    left: 50%
+    transform: translate(-50%, -50%)
+
+    h1
+        margin: 40px
+
+#restart-game
+    position: absolute
+    top: 20%
+    left: 50%
+    transform: translateX(-50%)
+
+.game-player
+    margin-top: 20px
+    width: 75px
+
+
+
+
+
+
+
+@media (max-width: 1444px)
+
+    .selected-character
+        .description
+            margin: 0 0 0 100px
+
+        .opponent
+            margin: 0 100px 0 0
+
+@media (max-width: 1200px)
+
+    .selected-character
+        .description
+            width: 300px
+            margin: 0 0 0 50px
+
+        .opponent
+            margin: 0 50px 0 0
+
+@media (max-width: 922px)
+
+    .selected-character
+        .description
+            width: 250px
+            margin: 0 0 0 20px
+
+        .opponent
+            margin: 0 20px 0 0
+
+    .description
+        .description-bullet
+            text-overflow: ellipsis
+            white-space: nowrap
+            overflow: hidden
+        .characterImage
+            height: 100px
+
+@media (max-width: 766px)
+
+    .player-name-opponent,
+    .player-name-user
+        width: 20%
+
+    .dropdown
+        .buttons
+            width: 20%
+
+            button
+                width: 100%
+                margin: 10px 0
+                font-size: 0.7em
+                text-overflow: ellipsis
+                white-space: nowrap
+                overflow: hidden
+
+    .selected-character
+        .description
+            width: 40%
+            margin: 0
+
+        .opponent
+            margin: 0
+
+    .description
+        li
+            height: 60px
+            display: flex
+            flex-direction: column
+
+        .description-title
+            width: 100%
+            margin: 0
+            padding: 0
+
+        .description-bullet
+            height: 30px
+
+        .description-name
+            height: 30px
+
+
+///////////////////////
+// HEIGHT MEDIA QUERIES
+///////////////////////
+
+@media (max-height: 818px)
+
+    .player-name-user
+        top: 10%
+    .player-name-opponent
+        bottom: 10%
+
+@media (max-height: 600px)
+
+    .game-player
+        width: 40px
+
+@media (max-height: 480px)
+
+    .player-name-user
+        top: 5%
+    .player-name-opponent
+        bottom: 5%
+
+    .game-player
+        width: 20px
+
+@media (max-height: 480px)
+
+    .player-name-user
+        top: 0
+    .player-name-opponent
+        bottom: 0
+
+    .player-name-user,
+    .player-name-opponent
+        h3
+            margin: 10px

@@ -112,14 +112,14 @@
 
 <script>
 
-    import ParticleComponent from './ParticleComponent.vue';
+    import ParticleComponent from '../ParticleComponent.vue';
 
     export default {
         data() {
             return {
                 isSelectingCharacter: false,
                 isDragging: false,
-                characters: this.appConfig.characters,
+                characters: this.gameOfLaddersConfig.characters,
                 selectedCharacter: null,
                 opponentCharacter: null,
                 game: null,
@@ -371,7 +371,7 @@
 
             sendGameMove(roll){
                 window.axios.post(`/game/gameMove/${this.lobbyId}`, {
-                    roll: roll,
+                    move: roll,
                 });
             },
 
@@ -596,11 +596,7 @@
             },
 
             getImageUrl(name) {
-                if (this.appConfig.copyrightViolations) {
-                    return '/images/characters/' + name.replace(/ /g,"-") + '.jpg'
-                } else {
-                    return '/images/characters/modified/' + name.replace(/ /g,"-") + '.jpg'
-                }
+                return '/images/characters/' + name.replace(/ /g,"-") + '.jpg';
             },
 
             selectCharacter(character) {
@@ -682,8 +678,8 @@
                     this.addGameMessage(`The game has been reset!`);
                 })
                 .listen('GameMoveEvent', (event) => {
-                    console.log('new game move: ', event.roll);
-                    this.doGameMove(event.roll);
+                    console.log('new game move: ', event);
+                    this.doGameMove(event.move);
                 }).listen('GameMessageEvent', (event) => {
                     console.log('new game message: ', event.message);
                     this.gameMessages.push(event.message);

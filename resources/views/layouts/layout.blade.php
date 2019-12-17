@@ -7,7 +7,7 @@
         <!-- CSRF Token -->
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>Game Of Ladders @yield('title')</title>
+        <title>Minigames @yield('title')</title>
 
         <!-- Scripts -->
         <script src="{{ asset('js/app.js') }}" defer></script>
@@ -22,8 +22,9 @@
     </head>
     <body>
         <img id="menu-button" class="menu-button" src="{{ asset('/images/icons/menu.svg') }}" alt="" onclick="toggleMenu()">
-        <img id="logo" class="logo" src="{{ asset('/images/icons/logo.svg') }}" alt="" >
+
         <nav id="nav">
+            <a class="nav-item btn" href="{{ route('index') }}">Home</a>
             @guest
                 <a class="nav-item btn" href="{{ route('register') }}">
 
@@ -31,27 +32,34 @@
                 </a>
                 <a class="nav-item btn" href="{{ route('login') }}">Log in</a>
             @else
-                <a class="nav-item btn" href="" >
-                    <img class="button-icon" src="{{asset('images/icons/player.svg')}}" alt="">
-                    <span class="text">{{ Auth::user()->name }}
-                            </span></a>
+                <a class="nav-item btn" href="" >{{ Auth::user()->name }}</a>
                 <a class="nav-item btn" href="{{ route('logout') }}">{{ __('Logout') }}</a>
             @endguest
             @if(Route::current()->getName() == 'lobby')
-                <button class="nav-item btn" onclick="copyURL()" >
-                    <img class="button-icon" src="{{asset('images/icons/link.svg')}}" alt="">
-                    <span class="text">Copy Game URL</span>
-                </button>
+                <button class="nav-item btn" onclick="copyURL()" >Copy Game URL</button>
             @endif
         </nav>
+
         <div id="app">
-
-
-
             @yield('content')
-
         </div>
+
         <div id="url-holder"></div>
+
+        <div class="area" >
+            <ul class="circles">
+                <li></li>
+                <li></li>
+                <li></li>
+                <li></li>
+                <li></li>
+                <li></li>
+                <li></li>
+                <li></li>
+                <li></li>
+                <li></li>
+            </ul>
+        </div >
         <script>
             // Source: https://techoverflow.net/2018/03/30/copying-strings-to-the-clipboard-using-pure-javascript/
             // Copy the URL to the clipboard by doing some weird workaround with the clipboard command

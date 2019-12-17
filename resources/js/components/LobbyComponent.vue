@@ -1,5 +1,5 @@
 <template>
-    <div class="container">
+    <div class="lobby-container">
         <!--CHAT-->
         <div class="chat">
             <ul>
@@ -9,13 +9,22 @@
             <button @click="sendMessage()">Send Message</button>
         </div>
 
-        <game-component v-bind:lobby-id="lobbyId" v-bind:connected-players="connectedPlayers" v-bind:user="user"></game-component>
+        <div v-if="selectedGameType === null" class="select-game">
+            <div class="game-type" v-for="gameType in gameTypes" @click="setGameMode(gameType)">
+                <h1>{{gameType}}</h1>
+            </div>
+        </div>
+
+        <games-of-ladders v-if="selectedGameType === 'Game Of Ladders'" v-bind:lobby-id="lobbyId" v-bind:connected-players="connectedPlayers" v-bind:user="user"></games-of-ladders>
+        <chess v-if="selectedGameType === 'Chess'" v-bind:lobby-id="lobbyId" v-bind:connected-players="connectedPlayers" v-bind:user="user"></chess>
+
     </div>
 </template>
 
 <script>
 
-    import GameComponent from './GameComponent.vue';
+    import GamesOfLadders from './games/GamesOfLaddersComponent.vue';
+    import Chess from './games/ChessComponent.vue';
 
     export default {
         data() {
@@ -23,6 +32,11 @@
                 connectedPlayers: [],
                 message: '',
                 messages: [],
+                selectedGameType: null,
+                gameTypes: [
+                    'Game Of Ladders',
+                    'Chess',
+                ]
             }
         },
 
@@ -33,13 +47,18 @@
         },
 
         components: {
-            GameComponent,
+            GamesOfLadders,
+            Chess,
         },
 
         methods: {
 
             getUserName(userId) {
                 return this.connectedPlayers.find(x => x.id === userId).name;
+            },
+
+            setGameMode(gameMode) {
+                this.selectedGameType = gameMode;
             },
 
             sendMessage() {

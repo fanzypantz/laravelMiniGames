@@ -1,8 +1,7 @@
 
 
 module.exports = {
-    config: {
-        "copyrightViolations": false,
+    gameOfLaddersConfig: {
 
         "characters": [
             {

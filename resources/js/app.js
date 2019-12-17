@@ -3,12 +3,12 @@
  * includes Vue and other libraries. It is a great starting point when
  * building robust, powerful web applications using Vue and Laravel.
  */
-import { config } from './config'
+import { gameOfLaddersConfig } from './components/games/configs/gameOfLaddersConfig'
 
 require('./bootstrap');
 
 window.Vue = require('vue');
-Vue.prototype.appConfig = config;
+Vue.prototype.gameOfLaddersConfig = gameOfLaddersConfig;
 /**
  * The following block of code may be used to automatically register your
  * Vue components. It will recursively scan this directory for the Vue

@@ -22,9 +22,9 @@ Route::group(['middleware' => 'auth'], function () {
 
     Route::post('startLobby', 'LobbyController@startLobby')->name('startLobby');
     Route::get('lobby/{id}', 'LobbyController@lobby')->name('lobby');
-    Route::post('lobby/updateCharacter/{lobby_id}', 'LobbyController@updateCharacter')->name('updateCharacter');
-    Route::post('game/startGame/{lobby_id}', 'LobbyController@startGame')->name('startGame');
-    Route::post('game/restartGame/{lobby_id}', 'LobbyController@restartGame')->name('restartGame');
-    Route::post('game/gameMove/{lobby_id}', 'LobbyController@gameMove')->name('gameMove');
-    Route::post('game/gameMessage/{lobby_id}', 'LobbyController@gameMessage')->name('gameMessage');
+    Route::post('lobby/updateCharacter/{lobby_id}', 'GameController@updateCharacter')->name('updateCharacter');
+    Route::post('game/startGame/{lobby_id}', 'GameController@startGame')->name('startGame');
+    Route::post('game/restartGame/{lobby_id}', 'GameController@restartGame')->name('restartGame');
+    Route::post('game/gameMove/{lobby_id}', 'GameController@gameMove')->name('gameMove');
+    Route::post('game/gameMessage/{lobby_id}', 'GameController@gameMessage')->name('gameMessage');
 });
