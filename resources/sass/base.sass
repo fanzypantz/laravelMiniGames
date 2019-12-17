@@ -22,7 +22,7 @@ button, .btn
     display: flex
     justify-content: center
     align-items: center
-    color: $font-colour
+    color: $hover
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.51)
     border: none
     background-color: $bg
@@ -33,7 +33,11 @@ button, .btn
 
     &:hover
         cursor: pointer
-        background-color: $bg
+        color: $bg
+        background-color: $hover
+
+    &:hover .button-icon
+        filter: invert(100)
 
     .button-icon
         width: 20px
@@ -56,15 +60,14 @@ nav
 
     .nav-item
         font-weight: 700
-        background-color: $bg-light
-        border-left: 2px solid $bg
-        border-right: 2px solid $bg
+        background-color: $hover
+        color: $bg
         margin-right: 20px
         box-shadow: none
 
         &:hover
-            color: $bg
-            background-color: $hover
+            color: $hover
+            background-color: $bg
 
 .menu-button
     position: absolute
