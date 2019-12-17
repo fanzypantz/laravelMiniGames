@@ -106,6 +106,10 @@
         <particle-component v-if="this.game !== null && this.game.victory !== null" v-bind:winner="game.victory" ></particle-component>
         <button id="restart-game" v-if="game !== null && game.victory !== null" @click="restartGame()">Start Game</button>
 
+        <div v-if="game !== null" class="game-control">
+            <button class="btn" @click="stopGame()">Stop Game</button>
+        </div>
+
     </div>
 
 </template>
@@ -136,8 +140,6 @@
         },
 
         props: {
-            id: null,
-            position: null,
             lobbyId: null,
             connectedPlayers: null,
             user: null,
@@ -282,6 +284,10 @@
                     game: this.game,
                 });
                 this.addGameMessage(`The game has started!`);
+            },
+
+            stopGame() {
+                window.axios.post(`/game/stopGame/${this.lobbyId}`);
             },
 
             restartGame() {

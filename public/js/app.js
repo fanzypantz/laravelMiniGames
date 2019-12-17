@@ -1863,6 +1863,7 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
@@ -1962,8 +1963,9 @@ __webpack_require__.r(__webpack_exports__);
       _this.messages.push(event);
     }).listen('ChangeGameModeEvent', function (event) {
       console.log(event);
-      _this.lobby.gameMode = event.gameMode;
       _this.gameMode = event.gameMode;
+    }).listen('StopGameEvent', function (event) {
+      _this.gameMode = '';
     });
   }
 });
@@ -2333,6 +2335,10 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 //
 //
 //
+//
+//
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
@@ -2358,8 +2364,6 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
     };
   },
   props: {
-    id: null,
-    position: null,
     lobbyId: null,
     connectedPlayers: null,
     user: null
@@ -2513,6 +2517,9 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
         game: this.game
       });
       this.addGameMessage("The game has started!");
+    },
+    stopGame: function stopGame() {
+      window.axios.post("/game/stopGame/".concat(this.lobbyId));
     },
     restartGame: function restartGame() {
       window.axios.post("/game/restartGame/".concat(this.lobbyId));
@@ -45253,7 +45260,7 @@ var render = function() {
       _vm.gameMode === "Game Of Ladders"
         ? _c("games-of-ladders", {
             attrs: {
-              "lobby-id": _vm.lobby.lobbyId,
+              "lobby-id": _vm.lobby.url,
               "connected-players": _vm.connectedPlayers,
               user: _vm.user
             }
@@ -45263,7 +45270,7 @@ var render = function() {
       _vm.gameMode === "Chess"
         ? _c("chess", {
             attrs: {
-              "lobby-id": _vm.lobby.lobbyId,
+              "lobby-id": _vm.lobby.url,
               "connected-players": _vm.connectedPlayers,
               user: _vm.user
             }
@@ -45754,6 +45761,23 @@ var render = function() {
             },
             [_vm._v("Start Game")]
           )
+        : _vm._e(),
+      _vm._v(" "),
+      _vm.game !== null
+        ? _c("div", { staticClass: "game-control" }, [
+            _c(
+              "button",
+              {
+                staticClass: "btn",
+                on: {
+                  click: function($event) {
+                    return _vm.stopGame()
+                  }
+                }
+              },
+              [_vm._v("Stop Game")]
+            )
+          ])
         : _vm._e()
     ],
     1

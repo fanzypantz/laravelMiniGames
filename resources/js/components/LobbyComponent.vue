@@ -15,8 +15,9 @@
             </div>
         </div>
 
-        <games-of-ladders v-if="gameMode === 'Game Of Ladders'" v-bind:lobby-id="lobby.lobbyId" v-bind:connected-players="connectedPlayers" v-bind:user="user"></games-of-ladders>
-        <chess v-if="gameMode === 'Chess'" v-bind:lobby-id="lobby.lobbyId" v-bind:connected-players="connectedPlayers" v-bind:user="user"></chess>
+        <games-of-ladders v-if="gameMode === 'Game Of Ladders'" v-bind:lobby-id="lobby.url" v-bind:connected-players="connectedPlayers" v-bind:user="user"></games-of-ladders>
+        <chess v-if="gameMode === 'Chess'" v-bind:lobby-id="lobby.url" v-bind:connected-players="connectedPlayers" v-bind:user="user"></chess>
+
 
     </div>
 </template>
@@ -138,8 +139,10 @@
                 })
                 .listen('ChangeGameModeEvent', (event) => {
                     console.log(event);
-                    this.lobby.gameMode = event.gameMode;
                     this.gameMode = event.gameMode;
+                })
+                .listen('StopGameEvent', (event) => {
+                    this.gameMode = '';
                 })
         }
     }

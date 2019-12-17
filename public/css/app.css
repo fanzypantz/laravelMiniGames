@@ -438,6 +438,15 @@ nav .nav-item:hover {
   margin: 20px;
 }
 
+.game-control {
+  position: absolute;
+  top: 50%;
+  right: 10%;
+  -webkit-transform: translateY(-50%);
+          transform: translateY(-50%);
+  z-index: 100;
+}
+
 .player-name-opponent,
 .player-name-user {
   background-color: #245c9b;

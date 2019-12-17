@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Events\ChangeCharacterEvent;
+use App\Events\ChangeGameModeEvent;
 use App\Events\GameMessageEvent;
 use App\Events\GameMoveEvent;
 use App\Events\RestartGameEvent;
 use App\Events\StartGameEvent;
+use App\Events\StopGameEvent;
+use App\Lobby;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -31,6 +34,18 @@ class GameController extends Controller
     {
         $game = $request->input('game');
         broadcast(new StartGameEvent($lobbyId, $game))->toOthers();
+    }
+
+    public function stopGame(Request $request, $lobbyId)
+    {
+        $lobby = Lobby::where('url', $lobbyId)->first();
+        if (!$lobby) {
+            abort(403, 'Lobby does not exist');
+        } else {
+            $lobby->gameMode = '';
+            $lobby->save();
+            broadcast(new StopGameEvent($lobbyId));
+        }
     }
 
     public function restartGame(Request $request, $lobbyId)

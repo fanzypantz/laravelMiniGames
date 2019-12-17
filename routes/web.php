@@ -27,6 +27,7 @@ Route::group(['middleware' => 'auth'], function () {
     //GAMECONTROLLER
     Route::post('lobby/updateCharacter/{lobby_id}', 'GameController@updateCharacter')->name('updateCharacter');
     Route::post('game/startGame/{lobby_id}', 'GameController@startGame')->name('startGame');
+    Route::post('game/stopGame/{lobby_id}', 'GameController@stopGame')->name('stopGame');
     Route::post('game/restartGame/{lobby_id}', 'GameController@restartGame')->name('restartGame');
     Route::post('game/gameMove/{lobby_id}', 'GameController@gameMove')->name('gameMove');
     Route::post('game/gameMessage/{lobby_id}', 'GameController@gameMessage')->name('gameMessage');
