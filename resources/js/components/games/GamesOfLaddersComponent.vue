@@ -13,9 +13,9 @@
 
         <!--CHARACTER SELECT-->
         <div class="dropdown" v-if="game === null">
-            <div class="buttons">
-                <button v-if="!isSelectingCharacter" class="dropdown-current"  @click="toggleSelect()">Select a character</button>
-                <button v-if="opponentCharacter && selectedCharacter && !isSelectingCharacter" @click="startGame()">
+            <div v-if="!isSelectingCharacter" class="buttons">
+                <button class="dropdown-current"  @click="toggleSelect()">Select a character</button>
+                <button v-if="opponentCharacter && selectedCharacter" @click="startGame()">
                     <img class="button-icon" src="/images/icons/play.svg" alt="">
                     <span class="text">Start Game</span>
                 </button>
@@ -96,15 +96,8 @@
             <div class="diceFace" id="bottom">6</div>
         </div>
 
-        <!--Message Cards-->
-        <div class="card-container">
-            <div class="game-message" v-for="message in gameMessages">
-                <p>{{message}}</p>
-            </div>
-        </div>
-
         <!--Victory screen-->
-        <particle-component v-if="this.game !== null && this.game.victory !== null" v-bind:winner="game.victory" ></particle-component>
+        <particle-component v-if="this.game !== null && this.game.victory !== null" v-bind:winner="game.victory"/>
         <button id="restart-game" v-if="game !== null && game.victory !== null" @click="restartGame()">Start Game</button>
 
         <div v-if="game !== null" class="game-control">
@@ -136,7 +129,6 @@
                 dieRotationX: 45,
                 dieSpeed: 500,
                 dieRoll: 1,
-                gameMessages: [],
             }
         },
 
@@ -284,7 +276,7 @@
                 window.axios.post(`/game/startGame/${this.lobbyId}`, {
                     game: this.game,
                 });
-                this.addGameMessage(`The game has started!`);
+                this.$emit('addGameMessage', `The game has started!`);
             },
 
             stopGame() {
@@ -294,7 +286,7 @@
             restartGame() {
                 window.axios.post(`/game/restartGame/${this.lobbyId}`);
                 this.game = null;
-                this.addGameMessage(`The game has been reset!`);
+                this.$emit('addGameMessage', `The game has been reset!`);
             },
 
             playerWon(player) {
@@ -396,14 +388,14 @@
                         if (roll !== 6) {
                             this.game.turn = this.game.player2.name;
                         } else {
-                            this.addGameMessage(`${this.game.player1.name} rolled a 6! They get another turn.`);
+                            this.$emit('addGameMessage', `${this.game.player1.name} rolled a 6! They get another turn.`);
                         }
                     } else {
                         // Rolled too high to win, will stay here until exact roll is met, loses his turn
                         if (roll !== 6) {
                             this.game.turn = this.game.player2.name;
                         } else {
-                            this.addGameMessage(`${this.game.player1.name} rolled a 6! They get another turn.`);
+                            this.$emit('addGameMessage', `${this.game.player1.name} rolled a 6! They get another turn.`);
                         }
                     }
 
@@ -416,14 +408,14 @@
                         if (roll !== 6) {
                             this.game.turn = this.game.player1.name;
                         } else {
-                            this.addGameMessage(`${this.game.player2.name} rolled a 6! They get another turn.`);
+                            this.$emit('addGameMessage', `${this.game.player2.name} rolled a 6! They get another turn.`);
                         }
                     } else {
                         // Rolled too high to win, will stay here until exact roll is met, loses his turn
                         if (roll !== 6) {
                             this.game.turn = this.game.player1.name;
                         } else {
-                            this.addGameMessage(`${this.game.player2.name} rolled a 6! They get another turn.`);
+                            this.$emit('addGameMessage', `${this.game.player2.name} rolled a 6! They get another turn.`);
                         }
                     }
                 }
@@ -446,12 +438,12 @@
                 // Messages
                 if (roll > 0) {
                     if (moveReason === undefined) {
-                        this.addGameMessage(`${player.name} is moving ${roll} spaces forward.`);
+                        this.$emit('addGameMessage', `${player.name} is moving ${roll} spaces forward.`);
                     } else {
-                        this.addGameMessage(`${player.name} is moving ${roll} spaces forward because ${moveReason}.`);
+                        this.$emit('addGameMessage', `${player.name} is moving ${roll} spaces forward because ${moveReason}.`);
                     }
                 } else {
-                    this.addGameMessage(`Oh no! ${player.name} is going ${Math.abs(roll)} spaces backwards because: ${moveReason}.`);
+                    this.$emit('addGameMessage', `Oh no! ${player.name} is going ${Math.abs(roll)} spaces backwards because: ${moveReason}.`);
                 }
 
                 // Animate the player
@@ -654,14 +646,6 @@
                     });
                 }
             },
-
-            addGameMessage(message) {
-                this.gameMessages.push(message);
-                setTimeout(() => {
-                    this.gameMessages = this.gameMessages.filter(e => e !== message);
-                }, 10000)
-            },
-
         },
 
         mounted() {
@@ -677,19 +661,19 @@
                 .listen('StartGameEvent', (event) => {
                     console.log('new game: ', event.game);
                     this.game = event.game;
-                    this.addGameMessage(`The game has started!`);
+                    this.$emit('addGameMessage', `The game has started!`);
                 })
                 .listen('RestartGameEvent', (event) => {
                     console.log('restarting game');
                     this.game = null;
-                    this.addGameMessage(`The game has been reset!`);
+                    this.$emit('addGameMessage', `The game has been reset!`);
                 })
                 .listen('GameMoveEvent', (event) => {
                     console.log('new game move: ', event);
                     this.doGameMove(event.move);
                 }).listen('GameMessageEvent', (event) => {
                     console.log('new game message: ', event.message);
-                    this.gameMessages.push(event.message);
+                    this.$emit('addGameMessage', 'event.message')
              });
         }
     }

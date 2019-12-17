@@ -145,7 +145,7 @@
         position: relative
         width: calc(100%/10)
         height: calc(100%/10)
-        background-color: $dark-tile
+        background-color: $board-dark
         box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.5)
 
         p
@@ -158,13 +158,13 @@
             margin: 10px
 
         &:nth-child(odd)
-            background-color: $light-tile
+            background-color: $board
 
     .oddRow:nth-of-type(odd)
-        background-color: $dark-tile
+        background-color: $board-dark
 
     .oddRow:nth-of-type(even)
-        background-color: $light-tile
+        background-color: $board
 
 .piece-character
     z-index: 10
@@ -214,48 +214,7 @@
         font-size: 30px
         border: 2px solid black
 
-.card-container
-    z-index: 50
-    position: absolute
-    top: 0
-    left: 0
-    display: flex
-    flex-direction: column
 
-.game-message
-    display: flex
-    flex-direction: column
-    align-content: center
-    justify-content: center
-    background-color: $bg
-    width: 400px
-    min-height: 75px
-    padding: 0 40px
-    color: white
-    animation: hide 10s ease
-
-    p
-        text-align: center
-        font-size: 1.2em
-        font-weight: 700
-        margin: 0
-        animation: hide-text 10s ease
-
-@keyframes hide
-    90%
-        min-height: 75px
-        opacity: 1
-    100%
-        min-height: 0
-        opacity: 0
-
-@keyframes hide-text
-    90%
-        font-size: 1.2em
-        opacity: 1
-    100%
-        font-size: 0
-        opacity: 0
 
 .victory-text
     pointer-events: none

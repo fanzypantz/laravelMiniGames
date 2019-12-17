@@ -1864,6 +1864,25 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
@@ -1872,6 +1891,7 @@ __webpack_require__.r(__webpack_exports__);
       connectedPlayers: [],
       message: '',
       messages: [],
+      gameMessages: [],
       gameMode: this.lobby.gameMode,
       gameModes: ['Game Of Ladders', 'Chess']
     };
@@ -1909,6 +1929,18 @@ __webpack_require__.r(__webpack_exports__);
         });
         this.message = '';
       }
+    },
+    addGameMessage: function addGameMessage(message) {
+      var div = document.createElement("div");
+      var element = document.createElement("p");
+      var parent = document.querySelector('#game-messages');
+      div.className = "game-message";
+      element.innerText = message;
+      div.appendChild(element);
+      parent.appendChild(div);
+      setTimeout(function () {
+        parent.removeChild(div);
+      }, 10000);
     },
     addUser: function addUser(user) {
       this.connectedPlayers.push(user); // // If there is a game state it means you joined a game in progress
@@ -2140,8 +2172,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {
-      game: null,
-      gameMessages: []
+      game: null
     };
   },
   props: {
@@ -2169,6 +2200,7 @@ __webpack_require__.r(__webpack_exports__);
     addGameMessage: function addGameMessage(message) {
       var _this = this;
 
+      console.log('message: ', message);
       this.gameMessages.push(message);
       setTimeout(function () {
         _this.gameMessages = _this.gameMessages.filter(function (e) {
@@ -2333,13 +2365,6 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 //
 //
 //
-//
-//
-//
-//
-//
-//
-//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
@@ -2360,8 +2385,7 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
       dieRotationY: 45,
       dieRotationX: 45,
       dieSpeed: 500,
-      dieRoll: 1,
-      gameMessages: []
+      dieRoll: 1
     };
   },
   props: {
@@ -2517,7 +2541,7 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
       window.axios.post("/game/startGame/".concat(this.lobbyId), {
         game: this.game
       });
-      this.addGameMessage("The game has started!");
+      this.$emit('addGameMessage', "The game has started!");
     },
     stopGame: function stopGame() {
       window.axios.post("/game/stopGame/".concat(this.lobbyId));
@@ -2525,7 +2549,7 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
     restartGame: function restartGame() {
       window.axios.post("/game/restartGame/".concat(this.lobbyId));
       this.game = null;
-      this.addGameMessage("The game has been reset!");
+      this.$emit('addGameMessage', "The game has been reset!");
     },
     playerWon: function playerWon(player) {
       console.log('player: ', player.playerNumber, ' won the game!');
@@ -2625,14 +2649,14 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
           if (roll !== 6) {
             this.game.turn = this.game.player2.name;
           } else {
-            this.addGameMessage("".concat(this.game.player1.name, " rolled a 6! They get another turn."));
+            this.$emit('addGameMessage', "".concat(this.game.player1.name, " rolled a 6! They get another turn."));
           }
         } else {
           // Rolled too high to win, will stay here until exact roll is met, loses his turn
           if (roll !== 6) {
             this.game.turn = this.game.player2.name;
           } else {
-            this.addGameMessage("".concat(this.game.player1.name, " rolled a 6! They get another turn."));
+            this.$emit('addGameMessage', "".concat(this.game.player1.name, " rolled a 6! They get another turn."));
           }
         }
       } else if (this.game.turn === this.game.player2.name) {
@@ -2644,14 +2668,14 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
           if (roll !== 6) {
             this.game.turn = this.game.player1.name;
           } else {
-            this.addGameMessage("".concat(this.game.player2.name, " rolled a 6! They get another turn."));
+            this.$emit('addGameMessage', "".concat(this.game.player2.name, " rolled a 6! They get another turn."));
           }
         } else {
           // Rolled too high to win, will stay here until exact roll is met, loses his turn
           if (roll !== 6) {
             this.game.turn = this.game.player1.name;
           } else {
-            this.addGameMessage("".concat(this.game.player2.name, " rolled a 6! They get another turn."));
+            this.$emit('addGameMessage', "".concat(this.game.player2.name, " rolled a 6! They get another turn."));
           }
         }
       }
@@ -2676,12 +2700,12 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
       // Messages
       if (roll > 0) {
         if (moveReason === undefined) {
-          this.addGameMessage("".concat(player.name, " is moving ").concat(roll, " spaces forward."));
+          this.$emit('addGameMessage', "".concat(player.name, " is moving ").concat(roll, " spaces forward."));
         } else {
-          this.addGameMessage("".concat(player.name, " is moving ").concat(roll, " spaces forward because ").concat(moveReason, "."));
+          this.$emit('addGameMessage', "".concat(player.name, " is moving ").concat(roll, " spaces forward because ").concat(moveReason, "."));
         }
       } else {
-        this.addGameMessage("Oh no! ".concat(player.name, " is going ").concat(Math.abs(roll), " spaces backwards because: ").concat(moveReason, "."));
+        this.$emit('addGameMessage', "Oh no! ".concat(player.name, " is going ").concat(Math.abs(roll), " spaces backwards because: ").concat(moveReason, "."));
       } // Animate the player
 
 
@@ -2886,44 +2910,34 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
       for (var i = 0; i < this.characters.length; i++) {
         _loop(i);
       }
-    },
-    addGameMessage: function addGameMessage(message) {
-      var _this7 = this;
-
-      this.gameMessages.push(message);
-      setTimeout(function () {
-        _this7.gameMessages = _this7.gameMessages.filter(function (e) {
-          return e !== message;
-        });
-      }, 10000);
     }
   },
   mounted: function mounted() {
-    var _this8 = this;
+    var _this7 = this;
 
     console.log('Game Component mounted.');
     window.addEventListener('mouseup', this.stopDrag);
     this.getCharacters();
     Echo.join('game.' + this.lobbyId).listen('ChangeCharacterEvent', function (event) {
-      _this8.opponentCharacter = event.characterName;
+      _this7.opponentCharacter = event.characterName;
     }).listen('StartGameEvent', function (event) {
       console.log('new game: ', event.game);
-      _this8.game = event.game;
+      _this7.game = event.game;
 
-      _this8.addGameMessage("The game has started!");
+      _this7.$emit('addGameMessage', "The game has started!");
     }).listen('RestartGameEvent', function (event) {
       console.log('restarting game');
-      _this8.game = null;
+      _this7.game = null;
 
-      _this8.addGameMessage("The game has been reset!");
+      _this7.$emit('addGameMessage', "The game has been reset!");
     }).listen('GameMoveEvent', function (event) {
       console.log('new game move: ', event);
 
-      _this8.doGameMove(event.move);
+      _this7.doGameMove(event.move);
     }).listen('GameMessageEvent', function (event) {
       console.log('new game message: ', event.message);
 
-      _this8.gameMessages.push(event.message);
+      _this7.$emit('addGameMessage', 'event.message');
     });
   }
 });
@@ -45236,6 +45250,11 @@ var render = function() {
         )
       ]),
       _vm._v(" "),
+      _c("div", {
+        staticClass: "card-container",
+        attrs: { id: "game-messages" }
+      }),
+      _vm._v(" "),
       _vm.gameMode === ""
         ? _c(
             "div",
@@ -45264,7 +45283,8 @@ var render = function() {
               "lobby-id": _vm.lobby.url,
               "connected-players": _vm.connectedPlayers,
               user: _vm.user
-            }
+            },
+            on: { addGameMessage: _vm.addGameMessage }
           })
         : _vm._e(),
       _vm._v(" "),
@@ -45274,7 +45294,8 @@ var render = function() {
               "lobby-id": _vm.lobby.url,
               "connected-players": _vm.connectedPlayers,
               user: _vm.user
-            }
+            },
+            on: { addGameMessage: _vm.addGameMessage }
           })
         : _vm._e()
     ],
@@ -45401,9 +45422,9 @@ var render = function() {
       _vm._v(" "),
       _vm.game === null
         ? _c("div", { staticClass: "dropdown" }, [
-            _c("div", { staticClass: "buttons" }, [
-              !_vm.isSelectingCharacter
-                ? _c(
+            !_vm.isSelectingCharacter
+              ? _c("div", { staticClass: "buttons" }, [
+                  _c(
                     "button",
                     {
                       staticClass: "dropdown-current",
@@ -45414,47 +45435,45 @@ var render = function() {
                       }
                     },
                     [_vm._v("Select a character")]
-                  )
-                : _vm._e(),
-              _vm._v(" "),
-              _vm.opponentCharacter &&
-              _vm.selectedCharacter &&
-              !_vm.isSelectingCharacter
-                ? _c(
+                  ),
+                  _vm._v(" "),
+                  _vm.opponentCharacter && _vm.selectedCharacter
+                    ? _c(
+                        "button",
+                        {
+                          on: {
+                            click: function($event) {
+                              return _vm.startGame()
+                            }
+                          }
+                        },
+                        [
+                          _c("img", {
+                            staticClass: "button-icon",
+                            attrs: { src: "/images/icons/play.svg", alt: "" }
+                          }),
+                          _vm._v(" "),
+                          _c("span", { staticClass: "text" }, [
+                            _vm._v("Start Game")
+                          ])
+                        ]
+                      )
+                    : _vm._e(),
+                  _vm._v(" "),
+                  _c(
                     "button",
                     {
+                      staticClass: "btn",
                       on: {
                         click: function($event) {
-                          return _vm.startGame()
+                          return _vm.stopGame()
                         }
                       }
                     },
-                    [
-                      _c("img", {
-                        staticClass: "button-icon",
-                        attrs: { src: "/images/icons/play.svg", alt: "" }
-                      }),
-                      _vm._v(" "),
-                      _c("span", { staticClass: "text" }, [
-                        _vm._v("Start Game")
-                      ])
-                    ]
+                    [_vm._v("Stop Game")]
                   )
-                : _vm._e(),
-              _vm._v(" "),
-              _c(
-                "button",
-                {
-                  staticClass: "btn",
-                  on: {
-                    click: function($event) {
-                      return _vm.stopGame()
-                    }
-                  }
-                },
-                [_vm._v("Stop Game")]
-              )
-            ]),
+                ])
+              : _vm._e(),
             _vm._v(" "),
             _vm.isSelectingCharacter
               ? _c(
@@ -45746,17 +45765,6 @@ var render = function() {
             ]
           )
         : _vm._e(),
-      _vm._v(" "),
-      _c(
-        "div",
-        { staticClass: "card-container" },
-        _vm._l(_vm.gameMessages, function(message) {
-          return _c("div", { staticClass: "game-message" }, [
-            _c("p", [_vm._v(_vm._s(message))])
-          ])
-        }),
-        0
-      ),
       _vm._v(" "),
       this.game !== null && this.game.victory !== null
         ? _c("particle-component", { attrs: { winner: _vm.game.victory } })

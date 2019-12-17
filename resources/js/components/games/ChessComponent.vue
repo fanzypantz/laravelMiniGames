@@ -12,7 +12,6 @@
         data() {
             return {
                 game: null,
-                gameMessages: [],
             }
         },
 
@@ -50,6 +49,7 @@
             },
 
             addGameMessage(message) {
+                console.log('message: ', message);
                 this.gameMessages.push(message);
                 setTimeout(() => {
                     this.gameMessages = this.gameMessages.filter(e => e !== message);

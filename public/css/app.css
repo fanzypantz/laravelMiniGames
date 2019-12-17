@@ -66,7 +66,7 @@ button .text,
 nav {
   -webkit-transition: opacity 250ms ease-in-out;
   transition: opacity 250ms ease-in-out;
-  z-index: 100;
+  z-index: 90;
   position: absolute;
   top: 0;
   left: 0;
@@ -478,6 +478,94 @@ nav .nav-item:hover {
   z-index: 100;
 }
 
+.card-container {
+  z-index: 100;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: -webkit-box;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+          flex-direction: column;
+}
+
+.game-message {
+  display: -webkit-box;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+          flex-direction: column;
+  align-content: center;
+  -webkit-box-pack: center;
+          justify-content: center;
+  background-color: white;
+  width: 400px;
+  min-height: 75px;
+  padding: 0 40px;
+  color: #245c9b;
+  -webkit-animation: hide 10s ease;
+          animation: hide 10s ease;
+  box-shadow: 0 10px 10px 0 rgba(0, 0, 0, 0.5);
+}
+
+.game-message p {
+  text-align: center;
+  font-size: 1.2em;
+  font-weight: 700;
+  margin: 0;
+  -webkit-animation: hide-text 10s ease;
+          animation: hide-text 10s ease;
+}
+
+@-webkit-keyframes hide {
+  90% {
+    min-height: 75px;
+    opacity: 1;
+  }
+
+  100% {
+    min-height: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes hide {
+  90% {
+    min-height: 75px;
+    opacity: 1;
+  }
+
+  100% {
+    min-height: 0;
+    opacity: 0;
+  }
+}
+
+@-webkit-keyframes hide-text {
+  90% {
+    font-size: 1.2em;
+    opacity: 1;
+  }
+
+  100% {
+    font-size: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes hide-text {
+  90% {
+    font-size: 1.2em;
+    opacity: 1;
+  }
+
+  100% {
+    font-size: 0;
+    opacity: 0;
+  }
+}
+
 .player-name-opponent,
 .player-name-user {
   background-color: #245c9b;
@@ -674,7 +762,7 @@ nav .nav-item:hover {
   position: relative;
   width: calc(100%/10);
   height: calc(100%/10);
-  background-color: #37280f;
+  background-color: rgba(0, 0, 0, 0.8);
   box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.5);
 }
 
@@ -689,15 +777,15 @@ nav .nav-item:hover {
 }
 
 .board .tile:nth-child(odd) {
-  background-color: #785326;
+  background-color: rgba(128, 128, 128, 0.8);
 }
 
 .board .oddRow:nth-of-type(odd) {
-  background-color: #37280f;
+  background-color: rgba(0, 0, 0, 0.8);
 }
 
 .board .oddRow:nth-of-type(even) {
-  background-color: #785326;
+  background-color: rgba(128, 128, 128, 0.8);
 }
 
 .piece-character {
@@ -770,93 +858,6 @@ nav .nav-item:hover {
   line-height: 50px;
   font-size: 30px;
   border: 2px solid black;
-}
-
-.card-container {
-  z-index: 50;
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: -webkit-box;
-  display: flex;
-  -webkit-box-orient: vertical;
-  -webkit-box-direction: normal;
-          flex-direction: column;
-}
-
-.game-message {
-  display: -webkit-box;
-  display: flex;
-  -webkit-box-orient: vertical;
-  -webkit-box-direction: normal;
-          flex-direction: column;
-  align-content: center;
-  -webkit-box-pack: center;
-          justify-content: center;
-  background-color: #245c9b;
-  width: 400px;
-  min-height: 75px;
-  padding: 0 40px;
-  color: white;
-  -webkit-animation: hide 10s ease;
-          animation: hide 10s ease;
-}
-
-.game-message p {
-  text-align: center;
-  font-size: 1.2em;
-  font-weight: 700;
-  margin: 0;
-  -webkit-animation: hide-text 10s ease;
-          animation: hide-text 10s ease;
-}
-
-@-webkit-keyframes hide {
-  90% {
-    min-height: 75px;
-    opacity: 1;
-  }
-
-  100% {
-    min-height: 0;
-    opacity: 0;
-  }
-}
-
-@keyframes hide {
-  90% {
-    min-height: 75px;
-    opacity: 1;
-  }
-
-  100% {
-    min-height: 0;
-    opacity: 0;
-  }
-}
-
-@-webkit-keyframes hide-text {
-  90% {
-    font-size: 1.2em;
-    opacity: 1;
-  }
-
-  100% {
-    font-size: 0;
-    opacity: 0;
-  }
-}
-
-@keyframes hide-text {
-  90% {
-    font-size: 1.2em;
-    opacity: 1;
-  }
-
-  100% {
-    font-size: 0;
-    opacity: 0;
-  }
 }
 
 .victory-text {

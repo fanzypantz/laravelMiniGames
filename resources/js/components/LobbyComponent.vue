@@ -9,14 +9,33 @@
             <button @click="sendMessage()">Send Message</button>
         </div>
 
+        <!--Message Cards-->
+        <div id="game-messages" class="card-container">
+
+        </div>
+
+        <!--Game Mode Select-->
         <div v-if="gameMode === ''" class="select-game">
             <div class="game-mode" v-for="gameMode in gameModes" @click="setGameMode(gameMode)">
                 <h1>{{gameMode}}</h1>
             </div>
         </div>
 
-        <games-of-ladders v-if="gameMode === 'Game Of Ladders'" v-bind:lobby-id="lobby.url" v-bind:connected-players="connectedPlayers" v-bind:user="user"/>
-        <chess v-if="gameMode === 'Chess'" v-bind:lobby-id="lobby.url" v-bind:connected-players="connectedPlayers" v-bind:user="user"/>
+        <!--Games-->
+        <games-of-ladders
+            v-if="gameMode === 'Game Of Ladders'"
+            v-bind:lobby-id="lobby.url"
+            v-bind:connected-players="connectedPlayers"
+            v-bind:user="user"
+            @addGameMessage="addGameMessage"
+        />
+        <chess
+            v-if="gameMode === 'Chess'"
+            v-bind:lobby-id="lobby.url"
+            v-bind:connected-players="connectedPlayers"
+            v-bind:user="user"
+            @addGameMessage="addGameMessage"
+        />
 
 
     </div>
@@ -33,6 +52,7 @@
                 connectedPlayers: [],
                 message: '',
                 messages: [],
+                gameMessages: [],
                 gameMode: this.lobby.gameMode,
                 gameModes: [
                     'Game Of Ladders',
@@ -78,6 +98,20 @@
                     this.message = '';
                 }
 
+            },
+
+            addGameMessage(message) {
+                let div = document.createElement("div");
+                let element = document.createElement("p");
+                let parent = document.querySelector('#game-messages');
+                div.className = "game-message";
+                element.innerText = message;
+                div.appendChild(element);
+                parent.appendChild(div);
+
+                setTimeout(() => {
+                    parent.removeChild(div);
+                }, 10000)
             },
 
             addUser(user) {
