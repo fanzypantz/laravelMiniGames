@@ -1893,7 +1893,7 @@ __webpack_require__.r(__webpack_exports__);
       messages: [],
       gameMessages: [],
       gameMode: this.lobby.gameMode,
-      gameModes: ['Game Of Ladders', 'Chess']
+      gameModes: ['Game Of Ladders', 'Chess', 'Checkers', 'Tic Tac Toe', 'BattleShip', 'Draw My Thing']
     };
   },
   props: {
