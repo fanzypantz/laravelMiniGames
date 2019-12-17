@@ -75,14 +75,13 @@ nav {
   width: 100%;
   -webkit-box-pack: center;
           justify-content: center;
-  background-color: #245c9b;
+  background-color: white;
 }
 
 nav .nav-item {
   font-weight: 700;
   background-color: white;
   color: #245c9b;
-  margin-right: 20px;
   box-shadow: none;
 }
 
