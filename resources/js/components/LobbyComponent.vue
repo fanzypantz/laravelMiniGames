@@ -1,0 +1,119 @@
+<template>
+    <div class="container">
+        <!--CHAT-->
+        <div class="chat">
+            <ul>
+                <li v-for="message in messages">{{ message.name }}: {{ message.message }}</li>
+            </ul>
+            <input @keyup.enter="sendMessage()" v-model="message" type="text">
+            <button @click="sendMessage()">Send Message</button>
+        </div>
+
+        <game-component v-bind:lobby-id="lobbyId" v-bind:connected-players="connectedPlayers" v-bind:user="user"></game-component>
+    </div>
+</template>
+
+<script>
+
+    import GameComponent from './GameComponent.vue';
+
+    export default {
+        data() {
+            return {
+                connectedPlayers: [],
+                message: '',
+                messages: [],
+            }
+        },
+
+        props: {
+            user: null,
+            lobby: null,
+            lobbyId: null,
+        },
+
+        components: {
+            GameComponent,
+        },
+
+        methods: {
+
+            getUserName(userId) {
+                return this.connectedPlayers.find(x => x.id === userId).name;
+            },
+
+            sendMessage() {
+                if (this.message !== '') {
+                    window.axios.post(`/lobby/message`, {
+                        message: this.message,
+                        lobbyId: this.lobbyId,
+                    });
+                    this.messages.push({
+                        message: this.message,
+                        name: this.user.name,
+                    });
+                    this.message = '';
+                }
+
+            },
+
+            addUser(user) {
+                this.connectedPlayers.push(user);
+
+                // // If there is a game state it means you joined a game in progress
+                // if (this.game.game_state !== null) {
+                //     let newGameState = this.game.game_state;
+                //
+                //     // Check if the new player should take over the old player's spot
+                //     if (
+                //         !(this.game.game_state.turn === this.connectedPlayers[0].id ||
+                //             this.game.game_state.turn === this.connectedPlayers[1].id)
+                //     ) {
+                //         newGameState.turn = user.id;
+                //     }
+                //
+                //     // Assign the new player as player1 or player 2
+                //     let otherPlayer = this.connectedPlayers.filter(obj => obj.id !== user.id)[0].id;
+                //     if (newGameState.player1 === otherPlayer) {
+                //         newGameState.player2 = user.id;
+                //     } else {
+                //         newGameState.player1 = user.id;
+                //     }
+                //
+                //     // Unpause the game
+                //     console.log('Sending unpause after new person joining');
+                //     window.axios.post(`/game/pause/${this.id}`, {
+                //         pause: JSON.stringify(false),
+                //     });
+                //}
+            },
+
+            removeUser(userId) {
+                this.connectedPlayers = this.connectedPlayers.filter(obj => obj.id !== userId);
+                // // Pause the game when a player leaves
+                // let newGameState = this.game.game_state;
+                // newGameState.pauseGame = true;
+                // this.updateGameState(newGameState);
+            },
+        },
+
+        mounted() {
+            console.log('Lobby Component mounted.');
+
+            Echo.join('lobby.' + this.lobbyId)
+                .here((users) => {
+                    this.connectedPlayers = users;
+                })
+                .joining((user) => {
+                    this.addUser(user);
+                })
+                .leaving((user) => {
+                    this.removeUser(user.id);
+                })
+                .listen('NewMessageEvent', (event) => {
+                    console.log(event);
+                    this.messages.push(event);
+                })
+        }
+    }
+</script>
