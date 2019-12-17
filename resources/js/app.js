@@ -32,3 +32,8 @@ const app = new Vue({
     el: '#app',
 });
 
+import bgAnimationModule from './bgAnimation'
+bgAnimationModule.startAnimation();
+
+import layoutModule from "./layout";
+window.layoutModule = layoutModule;
