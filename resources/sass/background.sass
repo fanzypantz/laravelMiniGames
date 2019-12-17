@@ -1,12 +1,28 @@
 .area
+    pointer-events: none
     position: absolute
     top: 0
     left: 0
     z-index: -100
-    background: $bg-light
-    background: linear-gradient(336deg, $bg, $bg-light)
+    background: $bg
     width: 100%
     height: 100vh
+    background: linear-gradient(-45deg, #c2e82a, #a84338, $bg, $bg-light)
+    background-size: 400% 400%
+    animation: gradientBG 15s ease infinite
+
+
+@keyframes gradientBG
+    0%
+        background-position: 0 50%
+
+    50%
+        background-position: 100% 50%
+
+    100%
+        background-position: 0 50%
+
+
 
 .circles
     margin: 0
@@ -104,3 +120,8 @@
         transform: translateY(-1000px) rotate(720deg)
         opacity: 0
         border-radius: 50%
+
+
+
+
+

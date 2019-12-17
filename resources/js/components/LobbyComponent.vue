@@ -15,8 +15,8 @@
             </div>
         </div>
 
-        <games-of-ladders v-if="gameMode === 'Game Of Ladders'" v-bind:lobby-id="lobby.url" v-bind:connected-players="connectedPlayers" v-bind:user="user"></games-of-ladders>
-        <chess v-if="gameMode === 'Chess'" v-bind:lobby-id="lobby.url" v-bind:connected-players="connectedPlayers" v-bind:user="user"></chess>
+        <games-of-ladders v-if="gameMode === 'Game Of Ladders'" v-bind:lobby-id="lobby.url" v-bind:connected-players="connectedPlayers" v-bind:user="user"/>
+        <chess v-if="gameMode === 'Chess'" v-bind:lobby-id="lobby.url" v-bind:connected-players="connectedPlayers" v-bind:user="user"/>
 
 
     </div>

@@ -2339,6 +2339,7 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 //
 //
 //
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
@@ -45439,7 +45440,20 @@ var render = function() {
                       ])
                     ]
                   )
-                : _vm._e()
+                : _vm._e(),
+              _vm._v(" "),
+              _c(
+                "button",
+                {
+                  staticClass: "btn",
+                  on: {
+                    click: function($event) {
+                      return _vm.stopGame()
+                    }
+                  }
+                },
+                [_vm._v("Stop Game")]
+              )
             ]),
             _vm._v(" "),
             _vm.isSelectingCharacter

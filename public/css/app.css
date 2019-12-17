@@ -219,14 +219,46 @@ nav .nav-item:hover {
 }
 
 .area {
+  pointer-events: none;
   position: absolute;
   top: 0;
   left: 0;
   z-index: -100;
-  background: #85420c;
-  background: linear-gradient(336deg, #245c9b, #85420c);
+  background: #245c9b;
   width: 100%;
   height: 100vh;
+  background: linear-gradient(-45deg, #c2e82a, #a84338, #245c9b, #85420c);
+  background-size: 400% 400%;
+  -webkit-animation: gradientBG 15s ease infinite;
+          animation: gradientBG 15s ease infinite;
+}
+
+@-webkit-keyframes gradientBG {
+  0% {
+    background-position: 0 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@keyframes gradientBG {
+  0% {
+    background-position: 0 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0 50%;
+  }
 }
 
 .circles {
@@ -413,8 +445,8 @@ nav .nav-item:hover {
 }
 
 .game-mode {
-  border-left: 2px solid #85420c;
-  border-right: 2px solid #85420c;
+  border-left: 2px solid white;
+  border-right: 2px solid white;
   margin: 0 20px;
   width: 400px;
   background-color: #245c9b;

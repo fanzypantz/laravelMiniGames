@@ -25,6 +25,9 @@
 
         <nav id="nav">
             <a class="nav-item btn" href="{{ route('index') }}">Home</a>
+            @if(Route::current()->getName() == 'lobby')
+                <a class="nav-item btn" onclick="copyURL()" >Copy Lobby URL</a>
+            @endif
             @guest
                 <a class="nav-item btn" href="{{ route('register') }}">
 
@@ -35,9 +38,6 @@
                 <a class="nav-item btn" href="" >{{ Auth::user()->name }}</a>
                 <a class="nav-item btn" href="{{ route('logout') }}">{{ __('Logout') }}</a>
             @endguest
-            @if(Route::current()->getName() == 'lobby')
-                <a class="nav-item btn" onclick="copyURL()" >Copy Game URL</a>
-            @endif
         </nav>
 
         <div id="app">
@@ -65,7 +65,7 @@
                 let bg = document.querySelector('#bg');
                 let bgAnimRequest = undefined;
                 let rotation = 0;
-                let rotationSpeed = 0.5;
+                let rotationSpeed = 0.1;
                 let rotateUp = true;
                 let colors = [
                     [36, 92, 155],
@@ -106,17 +106,21 @@
                         rotation -= rotationSpeed;
                     }
                     if (rotation > 360) {
-                        colorB = getRandomInt(1,6);
-                        rotateUp = false;
+                        rotation = 0;
+                        // colorB = getRandomInt(1,6);
+                        // rotateUp = false;
                     } else if (rotation < 0) {
-                        rotateUp = true;
+                        // rotateUp = true;
                     }
-                    b = [
-                        mapRange([0, 360], [colors[colorB][0], colors[colorA][0]], rotation),
-                        mapRange([0, 360], [colors[colorB][1], colors[colorA][1]], rotation),
-                        mapRange([0, 360], [colors[colorB][2], colors[colorA][2]], rotation),
-                    ];
-                    bg.style.background = `linear-gradient(${rotation}deg, rgb(${a[0]}, ${a[1]}, ${a[2]}), rgb(${b[0]}, ${b[1]}, ${b[2]}))`;
+                    // b = [
+                    //     mapRange([0, 360], [colors[colorB][0], colors[colorA][0]], rotation),
+                    //     mapRange([0, 360], [colors[colorB][1], colors[colorA][1]], rotation),
+                    //     mapRange([0, 360], [colors[colorB][2], colors[colorA][2]], rotation),
+                    // ];
+                    // bg.style.background = `linear-gradient(${rotation}deg, rgb(${a[0]}, ${a[1]}, ${a[2]}), rgb(${b[0]}, ${b[1]}, ${b[2]}))`;
+                    bg.style.background = `linear-gradient(${rotation}deg, #c2e82a, #a84338, #245C9B, #85420C)`;
+                    bg.style.backgroundSize = '200% 200%';
+
 
                     startAnimation();
                 }

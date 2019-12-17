@@ -19,6 +19,7 @@
                     <img class="button-icon" src="/images/icons/play.svg" alt="">
                     <span class="text">Start Game</span>
                 </button>
+                <button class="btn" @click="stopGame()">Stop Game</button>
             </div>
 
             <div v-if="isSelectingCharacter" class="dropdown-select">

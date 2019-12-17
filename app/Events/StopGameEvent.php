@@ -15,6 +15,11 @@ class StopGameEvent implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     private $lobbyId;
+    public function broadcastOn()
+    {
+        return new PresenceChannel('lobby.' . $this->lobbyId);
+    }
+
     /**
      * Create a new event instance.
      *
@@ -23,10 +28,5 @@ class StopGameEvent implements ShouldBroadcast
     public function __construct($lobbyId)
     {
         $this->lobbyId = $lobbyId;
-    }
-
-    public function broadcastOn()
-    {
-        return new PresenceChannel('lobby.' . $this->lobbyId);
     }
 }
