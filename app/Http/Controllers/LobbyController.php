@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\ChangeCharacterEvent;
+use App\Events\ChangeGameModeEvent;
 use App\Events\GameMessageEvent;
 use App\Events\GameMoveEvent;
 use App\Events\NewMessageEvent;
@@ -63,6 +64,18 @@ class LobbyController extends Controller
         return redirect()->route('lobby', ['id' => $lobbyName]);
     }
 
+    public function setGameMode(Request $request, $lobbyId) {
+        $gameMode = $request->input('gameMode');
+        $lobby = Lobby::where('url', $lobbyId)->first();
+        if (!$lobby) {
+            abort(403, 'Lobby does not exist');
+        } else {
+            $lobby->gameMode = $gameMode;
+            $lobby->save();
+            broadcast(new ChangeGameModeEvent($lobbyId, $gameMode))->toOthers();
+        }
+    }
+
     public function lobby(Request $request, $lobbyId)
     {
         $lobby = Lobby::where('url', $lobbyId)->first();
@@ -78,7 +91,6 @@ class LobbyController extends Controller
                 }
             }
             return view('lobby', [
-                'lobbyId' => $lobbyId,
                 'lobby' => $lobby
             ]);
         }

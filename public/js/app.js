@@ -1871,14 +1871,13 @@ __webpack_require__.r(__webpack_exports__);
       connectedPlayers: [],
       message: '',
       messages: [],
-      selectedGameType: null,
-      gameTypes: ['Game Of Ladders', 'Chess']
+      gameMode: this.lobby.gameMode,
+      gameModes: ['Game Of Ladders', 'Chess']
     };
   },
   props: {
     user: null,
-    lobby: null,
-    lobbyId: null
+    lobby: null
   },
   components: {
     GamesOfLadders: _games_GamesOfLaddersComponent_vue__WEBPACK_IMPORTED_MODULE_0__["default"],
@@ -1891,13 +1890,17 @@ __webpack_require__.r(__webpack_exports__);
       }).name;
     },
     setGameMode: function setGameMode(gameMode) {
-      this.selectedGameType = gameMode;
+      this.lobby.gameMode = gameMode;
+      this.gameMode = gameMode;
+      window.axios.post("/lobby/setGameMode/".concat(this.lobby.url), {
+        gameMode: gameMode
+      });
     },
     sendMessage: function sendMessage() {
       if (this.message !== '') {
         window.axios.post("/lobby/message", {
           message: this.message,
-          lobbyId: this.lobbyId
+          lobbyId: this.lobby.url
         });
         this.messages.push({
           message: this.message,
@@ -1947,7 +1950,7 @@ __webpack_require__.r(__webpack_exports__);
     var _this = this;
 
     console.log('Lobby Component mounted.');
-    Echo.join('lobby.' + this.lobbyId).here(function (users) {
+    Echo.join('lobby.' + this.lobby.url).here(function (users) {
       _this.connectedPlayers = users;
     }).joining(function (user) {
       _this.addUser(user);
@@ -1957,6 +1960,10 @@ __webpack_require__.r(__webpack_exports__);
       console.log(event);
 
       _this.messages.push(event);
+    }).listen('ChangeGameModeEvent', function (event) {
+      console.log(event);
+      _this.lobby.gameMode = event.gameMode;
+      _this.gameMode = event.gameMode;
     });
   }
 });
@@ -45221,42 +45228,42 @@ var render = function() {
         )
       ]),
       _vm._v(" "),
-      _vm.selectedGameType === null
+      _vm.gameMode === ""
         ? _c(
             "div",
             { staticClass: "select-game" },
-            _vm._l(_vm.gameTypes, function(gameType) {
+            _vm._l(_vm.gameModes, function(gameMode) {
               return _c(
                 "div",
                 {
-                  staticClass: "game-type",
+                  staticClass: "game-mode",
                   on: {
                     click: function($event) {
-                      return _vm.setGameMode(gameType)
+                      return _vm.setGameMode(gameMode)
                     }
                   }
                 },
-                [_c("h1", [_vm._v(_vm._s(gameType))])]
+                [_c("h1", [_vm._v(_vm._s(gameMode))])]
               )
             }),
             0
           )
         : _vm._e(),
       _vm._v(" "),
-      _vm.selectedGameType === "Game Of Ladders"
+      _vm.gameMode === "Game Of Ladders"
         ? _c("games-of-ladders", {
             attrs: {
-              "lobby-id": _vm.lobbyId,
+              "lobby-id": _vm.lobby.lobbyId,
               "connected-players": _vm.connectedPlayers,
               user: _vm.user
             }
           })
         : _vm._e(),
       _vm._v(" "),
-      _vm.selectedGameType === "Chess"
+      _vm.gameMode === "Chess"
         ? _c("chess", {
             attrs: {
-              "lobby-id": _vm.lobbyId,
+              "lobby-id": _vm.lobby.lobbyId,
               "connected-players": _vm.connectedPlayers,
               user: _vm.user
             }

@@ -412,7 +412,7 @@ nav .nav-item:hover {
           align-items: center;
 }
 
-.game-type {
+.game-mode {
   border-left: 2px solid #85420c;
   border-right: 2px solid #85420c;
   margin: 0 20px;
@@ -425,7 +425,7 @@ nav .nav-item:hover {
   transition: transform 250ms ease, -webkit-transform 250ms ease;
 }
 
-.game-type:hover {
+.game-mode:hover {
   -webkit-transform: scale(1.1);
           transform: scale(1.1);
   color: #245c9b;
@@ -433,7 +433,7 @@ nav .nav-item:hover {
   background-color: white;
 }
 
-.game-type h1 {
+.game-mode h1 {
   text-align: center;
   margin: 20px;
 }

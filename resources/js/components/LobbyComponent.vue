@@ -9,14 +9,14 @@
             <button @click="sendMessage()">Send Message</button>
         </div>
 
-        <div v-if="selectedGameType === null" class="select-game">
-            <div class="game-type" v-for="gameType in gameTypes" @click="setGameMode(gameType)">
-                <h1>{{gameType}}</h1>
+        <div v-if="gameMode === ''" class="select-game">
+            <div class="game-mode" v-for="gameMode in gameModes" @click="setGameMode(gameMode)">
+                <h1>{{gameMode}}</h1>
             </div>
         </div>
 
-        <games-of-ladders v-if="selectedGameType === 'Game Of Ladders'" v-bind:lobby-id="lobbyId" v-bind:connected-players="connectedPlayers" v-bind:user="user"></games-of-ladders>
-        <chess v-if="selectedGameType === 'Chess'" v-bind:lobby-id="lobbyId" v-bind:connected-players="connectedPlayers" v-bind:user="user"></chess>
+        <games-of-ladders v-if="gameMode === 'Game Of Ladders'" v-bind:lobby-id="lobby.lobbyId" v-bind:connected-players="connectedPlayers" v-bind:user="user"></games-of-ladders>
+        <chess v-if="gameMode === 'Chess'" v-bind:lobby-id="lobby.lobbyId" v-bind:connected-players="connectedPlayers" v-bind:user="user"></chess>
 
     </div>
 </template>
@@ -32,8 +32,8 @@
                 connectedPlayers: [],
                 message: '',
                 messages: [],
-                selectedGameType: null,
-                gameTypes: [
+                gameMode: this.lobby.gameMode,
+                gameModes: [
                     'Game Of Ladders',
                     'Chess',
                 ]
@@ -43,7 +43,6 @@
         props: {
             user: null,
             lobby: null,
-            lobbyId: null,
         },
 
         components: {
@@ -58,14 +57,18 @@
             },
 
             setGameMode(gameMode) {
-                this.selectedGameType = gameMode;
+                this.lobby.gameMode = gameMode;
+                this.gameMode = gameMode;
+                window.axios.post(`/lobby/setGameMode/${this.lobby.url}`, {
+                    gameMode: gameMode,
+                });
             },
 
             sendMessage() {
                 if (this.message !== '') {
                     window.axios.post(`/lobby/message`, {
                         message: this.message,
-                        lobbyId: this.lobbyId,
+                        lobbyId: this.lobby.url,
                     });
                     this.messages.push({
                         message: this.message,
@@ -119,7 +122,7 @@
         mounted() {
             console.log('Lobby Component mounted.');
 
-            Echo.join('lobby.' + this.lobbyId)
+            Echo.join('lobby.' + this.lobby.url)
                 .here((users) => {
                     this.connectedPlayers = users;
                 })
@@ -132,6 +135,11 @@
                 .listen('NewMessageEvent', (event) => {
                     console.log(event);
                     this.messages.push(event);
+                })
+                .listen('ChangeGameModeEvent', (event) => {
+                    console.log(event);
+                    this.lobby.gameMode = event.gameMode;
+                    this.gameMode = event.gameMode;
                 })
         }
     }

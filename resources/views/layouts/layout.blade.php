@@ -107,7 +107,6 @@
                     }
                     if (rotation > 360) {
                         colorB = getRandomInt(1,6);
-
                         rotateUp = false;
                     } else if (rotation < 0) {
                         rotateUp = true;

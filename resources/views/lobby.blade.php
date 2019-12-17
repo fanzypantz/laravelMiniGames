@@ -5,7 +5,6 @@
     @auth
         <lobby-component
             :user="{{ Auth::user() }}"
-            lobby-id="{{ $lobbyId }}"
             :lobby="{{ $lobby }}"
         ></lobby-component>
     @endauth
