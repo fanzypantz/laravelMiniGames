@@ -51,9 +51,9 @@ class LobbyController extends Controller
         if ($user->lobbies->count() > 0) {
             $lobbies = $user->lobbies()->get();
             foreach ($lobbies as $lobby) {
+                $lobby->users()->detach();
                 $lobby->delete();
             }
-            $user->lobbies()->detach();
         }
         // Generate a new lobby URL
         $lobbyName = uniqid();

@@ -15,8 +15,8 @@ class CreateLobbyUserTable extends Migration
     {
         Schema::create('lobby_user', function (Blueprint $table) {
             $table->increments('id');
-            $table->integer('lobby_id');
-            $table->integer('user_id');
+            $table->integer('lobby_id')->onDelete('cascade');
+            $table->integer('user_id')->onDelete('cascade');
         });
     }
 
