@@ -8,7 +8,7 @@
 
         <div class="player-name-opponent" v-if="connectedPlayers !== null && connectedPlayers.length === 2 && !isSelectingCharacter && game === null">
             <img class="game-player" src="/images/icons/player.svg" alt="">
-            <h3>{{getOpponentUser()}}</h3>
+            <h3>{{getOpponentUser().name}}</h3>
         </div>
 
         <!--CHARACTER SELECT-->
@@ -100,9 +100,9 @@
         <particle-component v-if="this.game !== null && this.game.victory !== null" v-bind:winner="game.victory"/>
         <button id="restart-game" v-if="game !== null && game.victory !== null" @click="restartGame()">Start Game</button>
 
-        <div v-if="game !== null" class="game-control">
-            <button class="btn" @click="stopGame()">Stop Game</button>
-        </div>
+<!--        <div v-if="game !== null" class="game-control">-->
+<!--            <button class="btn" @click="stopGame()">Stop Game</button>-->
+<!--        </div>-->
 
     </div>
 
@@ -136,6 +136,7 @@
             lobbyId: null,
             connectedPlayers: null,
             user: null,
+            gameState: null
         },
 
         components: {
@@ -144,6 +145,24 @@
 
         methods: {
 
+            init() {
+                if (this.gameState !== null) {
+                    // Set all the data from the saved gameState over to the game element
+                    if (this.gameState.player1.playerOwner === this.user.id) {
+                        this.selectedCharacter = this.getCharacterObject(this.gameState.player1.name).data;
+                        this.opponentCharacter = this.gameState.player2.name;
+                    } else {
+                        this.selectedCharacter = this.getCharacterObject(this.gameState.player2.name).data;
+                        this.opponentCharacter = this.gameState.player1.name;
+                    }
+                    this.game = this.gameState;
+                }
+            },
+
+            toggleSelect() {
+                this.isSelectingCharacter = !this.isSelectingCharacter;
+            },
+
             getRandomInt(min, max) {
                 min = Math.ceil(min);
                 max = Math.floor(max);
@@ -151,7 +170,71 @@
             },
 
             getOpponentUser() {
-                return this.connectedPlayers.filter(e => e.name !== this.user.name)[0].name;
+                return this.connectedPlayers.find(e => e.name === this.user.name);
+            },
+
+            getCharacterObject(name) {
+                return this.characters.find(e => e.name === name);
+            },
+
+            getCharacters() {
+                return new Promise((resolve, reject) => {
+                    // counter to check when all requests are done
+                    let count = 0;
+
+                    for (let i = 0; i < this.characters.length; i++) {
+                        axios.get(`https://www.anapioficeandfire.com/api/characters?name=${this.characters[i].name}`)
+                            .then((response) => {
+                                count++;
+                                this.characters[i].data = response.data[0];
+
+                                if (count === this.characters.length) {
+                                    resolve('All Characters Have Data Now');
+                                }
+                            }).catch((e) => {
+                                console.log(`error: ${this.characters[i]}`, e);
+                                reject(e);
+                            });
+                    }
+                });
+            },
+
+            getImageUrl(name) {
+                return '/images/characters/' + name.replace(/ /g,"-") + '.jpg';
+            },
+
+            selectCharacter(character) {
+                if (character.name !== this.opponentCharacter) {
+                    this.selectedCharacter = character;
+                    if (this.selectedCharacter.father !== "" && this.selectedCharacter.father.name === undefined) {
+                        axios.get(this.selectedCharacter.father)
+                            .then((response) => {
+                                this.selectedCharacter.father = response.data;
+                            }).catch((e) => {
+                            console.log('error: ', e);
+                        });
+                    }
+                    if (this.selectedCharacter.mother !== "" && this.selectedCharacter.mother.name === undefined) {
+                        axios.get(this.selectedCharacter.mother)
+                            .then((response) => {
+                                this.selectedCharacter.mother = response.data;
+                            }).catch((e) => {
+                            console.log('error: ', e);
+                        });
+                    }
+                    if (this.selectedCharacter.spouse !== "" && this.selectedCharacter.spouse.name === undefined) {
+                        axios.get(this.selectedCharacter.spouse)
+                            .then((response) => {
+                                this.selectedCharacter.spouse = response.data;
+                            }).catch((e) => {
+                            console.log('error: ', e);
+                        });
+                    }
+                    window.axios.post(`/lobby/updateCharacter/${this.lobbyId}`, {
+                        character: this.selectedCharacter.name,
+                    });
+                    this.toggleSelect();
+                }
             },
 
             tileClass(id) {
@@ -259,12 +342,14 @@
                 game.player1 = {
                     tile: 0,
                     playerNumber: 1,
+                    playerOwner: this.user.id,
                     name: this.selectedCharacter.name,
                     position: game.board[0].position
                 };
                 game.player2 = {
                     tile: 0,
                     playerNumber: 2,
+                    playerOwner: this.getOpponentUser().id,
                     name: this.opponentCharacter,
                     position: game.board[0].position
                 };
@@ -371,155 +456,156 @@
             sendGameMove(roll){
                 window.axios.post(`/game/gameMove/${this.lobbyId}`, {
                     move: roll,
+                    gameState: this.game
                 });
             },
 
             doGameMove(roll) {
-                if (this.game.turn === this.selectedCharacter.name) {
-                    this.sendGameMove(roll);
-                }
-
                 if (this.game.turn === this.game.player1.name) {
-                    if (this.game.player1.tile + roll <= 99) {
-                        // Roll is lower than max tile so can move
-                        this.movePlayer(this.game.player1, roll);
-                        this.checkTrapLadder(this.game.player1);
-                        // If roll is 6, don't change turn
-                        if (roll !== 6) {
-                            this.game.turn = this.game.player2.name;
-                        } else {
-                            this.$emit('addGameMessage', `${this.game.player1.name} rolled a 6! They get another turn.`);
-                        }
-                    } else {
-                        // Rolled too high to win, will stay here until exact roll is met, loses his turn
-                        if (roll !== 6) {
-                            this.game.turn = this.game.player2.name;
-                        } else {
-                            this.$emit('addGameMessage', `${this.game.player1.name} rolled a 6! They get another turn.`);
-                        }
-                    }
-
+                    this.movePlayerCheck(this.game.player1, this.game.player2, roll);
                 } else if (this.game.turn === this.game.player2.name) {
-                    if (this.game.player2.tile + roll <= 99) {
-                        // Roll is lower than max tile so can move
-                        this.movePlayer(this.game.player2, roll);
-                        this.checkTrapLadder(this.game.player2);
-                        // If roll is 6, don't change turn.
-                        if (roll !== 6) {
-                            this.game.turn = this.game.player1.name;
-                        } else {
-                            this.$emit('addGameMessage', `${this.game.player2.name} rolled a 6! They get another turn.`);
-                        }
-                    } else {
-                        // Rolled too high to win, will stay here until exact roll is met, loses his turn
-                        if (roll !== 6) {
-                            this.game.turn = this.game.player1.name;
-                        } else {
-                            this.$emit('addGameMessage', `${this.game.player2.name} rolled a 6! They get another turn.`);
-                        }
-                    }
+                    this.movePlayerCheck(this.game.player2, this.game.player1, roll);
                 }
             },
 
-            checkTrapLadder(player) {
-                // If there is a trap there has to be a delay for the trap to spring
-                setTimeout(() => {
-                    if (this.checkTrap(player)) {
-                        setTimeout(() => {
-                            this.checkLadder(player);
-                        }, 1100)
+            movePlayerCheck(player, opponent, roll) {
+                console.log('playerMove: ', player, opponent, roll);
+                if (player.tile + roll <= 99) {
+                    console.log('roll is under 99: ', );
+                    // Roll is lower than max tile so can move
+                    this.movePlayer(player, roll).then(() => {
+                        this.checkTrapLadder(player).then(() => {
+                            if (this.game.turn === this.selectedCharacter.name) {
+                                this.sendGameMove(roll);
+                            }
+                            // If roll is 6, don't change turn
+                            if (roll !== 6) {
+                                this.game.turn = opponent.name;
+                            } else {
+                                this.$emit('addGameMessage', `${player.name} rolled a 6! They get another turn.`);
+                            }
+                        });
+
+                    });
+                } else {
+                    // Rolled too high to win, will stay here until exact roll is met, loses his turn
+                    if (roll !== 6) {
+                        this.game.turn = opponent.name;
                     } else {
-                        this.checkLadder(player);
+                        this.$emit('addGameMessage', `${player.name} rolled a 6! They get another turn.`);
                     }
-                },1000);
+                }
             },
 
             movePlayer(player, roll, moveReason) {
-                // Messages
-                if (roll > 0) {
-                    if (moveReason === undefined) {
-                        this.$emit('addGameMessage', `${player.name} is moving ${roll} spaces forward.`);
-                    } else {
-                        this.$emit('addGameMessage', `${player.name} is moving ${roll} spaces forward because ${moveReason}.`);
-                    }
-                } else {
-                    this.$emit('addGameMessage', `Oh no! ${player.name} is going ${Math.abs(roll)} spaces backwards because: ${moveReason}.`);
-                }
-
-                // Animate the player
-                this.animatePlayer(player, roll);
-
-                // Set all the new data after the animation is done
-                setTimeout(() => {
-                    // Move player to his new place on the board, remove him from the old tile
-                    this.game.board[player.tile].pieces = this.game.board[player.tile].pieces.filter(e => e.name !== player.name);
-                    this.game.board[player.tile + roll].pieces.push({name: player.name, id: player.playerNumber});
-
-                    // Add the roll to his current position
-                    if (player.playerNumber === 1) {
-                        this.game.player1.position = this.game.board[player.tile + roll].position;
-                        this.game.player1.tile += roll;
-                        if (this.game.player1.tile === 99) {
-                            this.playerWon(this.game.player1);
+                return new Promise((resolve) => {
+                    // Messages
+                    if (roll > 0) {
+                        if (moveReason === undefined) {
+                            this.$emit('addGameMessage', `${player.name} is moving ${roll} spaces forward.`);
+                        } else {
+                            this.$emit('addGameMessage', `${player.name} is moving ${roll} spaces forward because ${moveReason}.`);
                         }
                     } else {
-                        this.game.player2.position = this.game.board[player.tile + roll].position;
-                        this.game.player2.tile += roll;
-                        if (this.game.player2.tile === 99) {
-                            this.playerWon(this.game.player1);
-                        }
+                        this.$emit('addGameMessage', `Oh no! ${player.name} is going ${Math.abs(roll)} spaces backwards because: ${moveReason}.`);
                     }
 
+                    // Animate the player
+                    this.animatePlayer(player, roll).then(() => {
+                        // Set all the new data after the animation is done
+                        // Move player to his new place on the board, remove him from the old tile
+                        this.game.board[player.tile].pieces = this.game.board[player.tile].pieces.filter(e => e.name !== player.name);
+                        this.game.board[player.tile + roll].pieces.push({name: player.name, id: player.playerNumber});
 
-                }, 1000);
+                        // Add the roll to his current position
+                        if (player.playerNumber === 1) {
+                            this.game.player1.position = this.game.board[player.tile + roll].position;
+                            this.game.player1.tile += roll;
+                            if (this.game.player1.tile === 99) {
+                                this.playerWon(this.game.player1);
+                            }
+                        } else {
+                            this.game.player2.position = this.game.board[player.tile + roll].position;
+                            this.game.player2.tile += roll;
+                            if (this.game.player2.tile === 99) {
+                                this.playerWon(this.game.player1);
+                            }
+                        }
+                        resolve();
+                    });
+                });
             },
 
             animatePlayer(player, roll) {
-                let oldPosition = player.position;
-                let newPosition = this.game.board[player.tile + roll].position;
-                let tileHeight = (window.innerHeight * 0.8) / 10;
+                return new Promise ((resolve) => {
+                    let oldPosition = player.position;
+                    let newPosition = this.game.board[player.tile + roll].position;
+                    let tileHeight = (window.innerHeight * 0.8) / 10;
 
-                let x = newPosition.x - oldPosition.x;
-                let y = newPosition.y - oldPosition.y;
+                    let x = newPosition.x - oldPosition.x;
+                    let y = newPosition.y - oldPosition.y;
 
-                let element = this.$el.querySelector(`#player-piece-${player.playerNumber}`);
-                element.style.transition = "left ease-in-out 1000ms, bottom ease-in-out 1000ms";
-                if (y > 0) {
-                    element.style.bottom = ((tileHeight * y) + tileHeight * 0.5) + "px";
-                } else if (y < 0) {
-                    element.style.bottom = ((tileHeight * y) + (tileHeight * 0.5)) + "px";
-                }
-                element.style.left = ((tileHeight * x) + tileHeight * 0.5) + "px";
-                setTimeout(() => {
-                    // Fix for the weird way VUE applies this to the wrong player after the player has been moved to another array index
-                    // For some reason, even when the element has been selected for with ID, it applies this to the player that should not move
-                    // after the board has updated, making them swap places. They still do, this just makes it invisible.
-                    element.style.transition = "none";
-                    element.style.bottom = "50%";
-                    element.style.left = "50%";
-                }, 1000)
+                    let element = this.$el.querySelector(`#player-piece-${player.playerNumber}`);
+                    element.style.transition = "left ease-in-out 1000ms, bottom ease-in-out 1000ms";
+                    if (y > 0) {
+                        element.style.bottom = ((tileHeight * y) + tileHeight * 0.5) + "px";
+                    } else if (y < 0) {
+                        element.style.bottom = ((tileHeight * y) + (tileHeight * 0.5)) + "px";
+                    }
+                    element.style.left = ((tileHeight * x) + tileHeight * 0.5) + "px";
+                    setTimeout(() => {
+                        // Fix for the weird way VUE applies this to the wrong player after the player has been moved to another array index
+                        // For some reason, even when the element has been selected for with ID, it applies this to the player that should not move
+                        // after the board has updated, making them swap places. They still do, this just makes it invisible.
+                        element.style.transition = "none";
+                        element.style.bottom = "50%";
+                        element.style.left = "50%";
+
+                        resolve();
+                    }, 1000)
+                });
             },
 
-            checkTrap(player) {
-                let trap = this.game.board[player.tile].trap;
+            checkTrapLadder(player) {
+                return new Promise((resolve) => {
+                    this.checkTrap(player).then(() => {
+                        this.checkLadder(player).then(() => {
+                            resolve();
+                        });
+                    });
+                });
 
-                if (trap !== null && trap.start !== undefined) {
-                    this.movePlayer(player, trap.start, this.generateTrapMessage(player));
-                    return true;
-                } else {
-                    return false;
-                }
+            },
+
+
+            checkTrap(player) {
+                return new Promise((resolve, reject) => {
+                    let trap = this.game.board[player.tile].trap;
+
+                    if (trap !== null && trap.start !== undefined) {
+                        this.movePlayer(player, trap.start, this.generateTrapMessage(player)).then(() => {
+                            resolve(true);
+                        });
+                    } else {
+                        resolve(false);
+                    }
+                })
+
             },
 
             checkLadder(player) {
-                let ladder = this.game.board[player.tile].ladder;
+                return new Promise((resolve) => {
+                    let ladder = this.game.board[player.tile].ladder;
 
-                if (ladder !== null && ladder.start !== undefined) {
-                    this.movePlayer(player, ladder.start, this.generateLadderMessage(player));
-                    return true;
-                } else {
-                    return false;
-                }
+                    if (ladder !== null && ladder.start !== undefined) {
+                        this.movePlayer(player, ladder.start, this.generateLadderMessage(player)).then(() => {
+                            resolve(true);
+                        });
+                    } else {
+                        resolve(false);
+                    }
+                })
+
             },
 
             generateTrapMessage(player) {
@@ -589,70 +675,15 @@
                     }
                 }
             },
-
-            toggleSelect() {
-                this.isSelectingCharacter = !this.isSelectingCharacter;
-            },
-
-            getImageUrl(name) {
-                return '/images/characters/' + name.replace(/ /g,"-") + '.jpg';
-            },
-
-            selectCharacter(character) {
-                if (character.name !== this.opponentCharacter) {
-                    this.selectedCharacter = character;
-                    if (this.selectedCharacter.father !== "" && this.selectedCharacter.father.name === undefined) {
-                        axios.get(this.selectedCharacter.father)
-                            .then((response) => {
-                                this.selectedCharacter.father = response.data;
-                            }).catch((e) => {
-                            console.log('error: ', e);
-                        });
-                    }
-                    if (this.selectedCharacter.mother !== "" && this.selectedCharacter.mother.name === undefined) {
-                        axios.get(this.selectedCharacter.mother)
-                            .then((response) => {
-                                this.selectedCharacter.mother = response.data;
-                            }).catch((e) => {
-                            console.log('error: ', e);
-                        });
-                    }
-                    if (this.selectedCharacter.spouse !== "" && this.selectedCharacter.spouse.name === undefined) {
-                        axios.get(this.selectedCharacter.spouse)
-                            .then((response) => {
-                                this.selectedCharacter.spouse = response.data;
-                            }).catch((e) => {
-                            console.log('error: ', e);
-                        });
-                    }
-                    window.axios.post(`/lobby/updateCharacter/${this.lobbyId}`, {
-                        character: this.selectedCharacter.name,
-                    });
-                    this.toggleSelect();
-                }
-            },
-
-            getCharacters() {
-                // counter to check when all requests are done
-                let count = 0;
-
-                for (let i = 0; i < this.characters.length; i++) {
-                    axios.get(`https://www.anapioficeandfire.com/api/characters?name=${this.characters[i].name}`)
-                        .then((response) => {
-                            count++;
-                            this.characters[i].data = response.data[0];
-                        }).catch((e) => {
-                        console.log(`error: ${this.characters[i]}`, e);
-                    });
-                }
-            },
         },
 
         mounted() {
             console.log('Game Component mounted.');
 
             window.addEventListener('mouseup', this.stopDrag);
-            this.getCharacters();
+            this.getCharacters().then(() => {
+                this.init();
+            });
 
             Echo.join('game.' + this.lobbyId)
                 .listen('ChangeCharacterEvent', (event) => {

@@ -33,7 +33,14 @@ class GameController extends Controller
     public function startGame(Request $request, $lobbyId)
     {
         $game = $request->input('game');
-        broadcast(new StartGameEvent($lobbyId, $game))->toOthers();
+        $lobby = Lobby::where('url', $lobbyId)->first();
+        if (!$lobby) {
+            abort(403, 'Lobby does not exist');
+        } else {
+            $lobby->gameState = $game;
+            $lobby->save();
+            broadcast(new StartGameEvent($lobbyId, $game))->toOthers();
+        }
     }
 
     public function stopGame(Request $request, $lobbyId)
@@ -43,6 +50,7 @@ class GameController extends Controller
             abort(403, 'Lobby does not exist');
         } else {
             $lobby->gameMode = '';
+            $lobby->gameState = null;
             $lobby->save();
             broadcast(new StopGameEvent($lobbyId));
         }
@@ -56,7 +64,16 @@ class GameController extends Controller
     public function gameMove(Request $request, $lobbyId)
     {
         $move = $request->input('move');
-        broadcast(new GameMoveEvent($lobbyId, $move))->toOthers();
+        $gameState = $request->input('gameState');
+
+        $lobby = Lobby::where('url', $lobbyId)->first();
+        if (!$lobby) {
+            abort(403, 'Lobby does not exist');
+        } else {
+            $lobby->gameState = $gameState;
+            $lobby->save();
+            broadcast(new GameMoveEvent($lobbyId, $move, $gameState))->toOthers();
+        }
     }
 
     public function gameMessage(Request $request, $lobbyId)

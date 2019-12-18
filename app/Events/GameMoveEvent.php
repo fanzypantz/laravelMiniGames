@@ -15,15 +15,17 @@ class GameMoveEvent implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $move;
+    public $gameState;
     private $lobbyId;
     /**
      * Create a new event instance.
      *
      * @return void>>>
      */
-    public function __construct($lobbyId, $move)
+    public function __construct($lobbyId, $move, $gameState)
     {
         $this->move = $move;
+        $this->gameState = $gameState;
         $this->lobbyId = $lobbyId;
     }
 

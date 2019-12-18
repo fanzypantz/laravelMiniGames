@@ -1883,6 +1883,7 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
@@ -2391,12 +2392,30 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
   props: {
     lobbyId: null,
     connectedPlayers: null,
-    user: null
+    user: null,
+    gameState: null
   },
   components: {
     ParticleComponent: _ParticleComponent_vue__WEBPACK_IMPORTED_MODULE_0__["default"]
   },
   methods: {
+    init: function init() {
+      if (this.gameState !== null) {
+        // Set all the data from the saved gameState over to the game element
+        if (this.gameState.player1.playerOwner === this.user.id) {
+          this.selectedCharacter = this.getCharacterObject(this.gameState.player1.name).data;
+          this.opponentCharacter = this.gameState.player2.name;
+        } else {
+          this.selectedCharacter = this.getCharacterObject(this.gameState.player2.name).data;
+          this.opponentCharacter = this.gameState.player1.name;
+        }
+
+        this.game = this.gameState;
+      }
+    },
+    toggleSelect: function toggleSelect() {
+      this.isSelectingCharacter = !this.isSelectingCharacter;
+    },
     getRandomInt: function getRandomInt(min, max) {
       min = Math.ceil(min);
       max = Math.floor(max);
@@ -2405,9 +2424,79 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
     getOpponentUser: function getOpponentUser() {
       var _this = this;
 
-      return this.connectedPlayers.filter(function (e) {
-        return e.name !== _this.user.name;
-      })[0].name;
+      return this.connectedPlayers.find(function (e) {
+        return e.name === _this.user.name;
+      });
+    },
+    getCharacterObject: function getCharacterObject(name) {
+      return this.characters.find(function (e) {
+        return e.name === name;
+      });
+    },
+    getCharacters: function getCharacters() {
+      var _this2 = this;
+
+      return new Promise(function (resolve, reject) {
+        // counter to check when all requests are done
+        var count = 0;
+
+        var _loop = function _loop(i) {
+          axios.get("https://www.anapioficeandfire.com/api/characters?name=".concat(_this2.characters[i].name)).then(function (response) {
+            count++;
+            _this2.characters[i].data = response.data[0];
+
+            if (count === _this2.characters.length) {
+              resolve('All Characters Have Data Now');
+            }
+          })["catch"](function (e) {
+            console.log("error: ".concat(_this2.characters[i]), e);
+            reject(e);
+          });
+        };
+
+        for (var i = 0; i < _this2.characters.length; i++) {
+          _loop(i);
+        }
+      });
+    },
+    getImageUrl: function getImageUrl(name) {
+      return '/images/characters/' + name.replace(/ /g, "-") + '.jpg';
+    },
+    selectCharacter: function selectCharacter(character) {
+      var _this3 = this;
+
+      if (character.name !== this.opponentCharacter) {
+        this.selectedCharacter = character;
+
+        if (this.selectedCharacter.father !== "" && this.selectedCharacter.father.name === undefined) {
+          axios.get(this.selectedCharacter.father).then(function (response) {
+            _this3.selectedCharacter.father = response.data;
+          })["catch"](function (e) {
+            console.log('error: ', e);
+          });
+        }
+
+        if (this.selectedCharacter.mother !== "" && this.selectedCharacter.mother.name === undefined) {
+          axios.get(this.selectedCharacter.mother).then(function (response) {
+            _this3.selectedCharacter.mother = response.data;
+          })["catch"](function (e) {
+            console.log('error: ', e);
+          });
+        }
+
+        if (this.selectedCharacter.spouse !== "" && this.selectedCharacter.spouse.name === undefined) {
+          axios.get(this.selectedCharacter.spouse).then(function (response) {
+            _this3.selectedCharacter.spouse = response.data;
+          })["catch"](function (e) {
+            console.log('error: ', e);
+          });
+        }
+
+        window.axios.post("/lobby/updateCharacter/".concat(this.lobbyId), {
+          character: this.selectedCharacter.name
+        });
+        this.toggleSelect();
+      }
     },
     tileClass: function tileClass(id) {
       var tileClass = 'tile';
@@ -2518,12 +2607,14 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
       game.player1 = {
         tile: 0,
         playerNumber: 1,
+        playerOwner: this.user.id,
         name: this.selectedCharacter.name,
         position: game.board[0].position
       };
       game.player2 = {
         tile: 0,
         playerNumber: 2,
+        playerOwner: this.getOpponentUser().id,
         name: this.opponentCharacter,
         position: game.board[0].position
       };
@@ -2559,54 +2650,54 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
       this.dieLastTime = Date.now();
     },
     stopRoll: function stopRoll() {
-      var _this2 = this;
+      var _this4 = this;
 
       clearInterval(this.rollInterval); // This makes the final die throw random regardless of what it looks like it should be
 
       this.dieRoll = this.getRandomInt(1, 6);
       setTimeout(function () {
         // Stop the die animation
-        _this2.stopDieAnimation(); // finally land on the final die position
+        _this4.stopDieAnimation(); // finally land on the final die position
 
 
-        switch (_this2.dieRoll) {
+        switch (_this4.dieRoll) {
           case 1:
-            _this2.dieRotationY = 360;
-            _this2.dieRotationX = 0;
+            _this4.dieRotationY = 360;
+            _this4.dieRotationX = 0;
             break;
 
           case 2:
-            _this2.dieRotationY = -90;
-            _this2.dieRotationX = 0;
+            _this4.dieRotationY = -90;
+            _this4.dieRotationX = 0;
             break;
 
           case 3:
-            _this2.dieRotationY = 180;
-            _this2.dieRotationX = 0;
+            _this4.dieRotationY = 180;
+            _this4.dieRotationX = 0;
             break;
 
           case 4:
-            _this2.dieRotationY = 90;
-            _this2.dieRotationX = 0;
+            _this4.dieRotationY = 90;
+            _this4.dieRotationX = 0;
             break;
 
           case 5:
-            _this2.dieRotationY = 0;
-            _this2.dieRotationX = -90;
+            _this4.dieRotationY = 0;
+            _this4.dieRotationX = -90;
             break;
 
           case 6:
-            _this2.dieRotationY = 0;
-            _this2.dieRotationX = 90;
+            _this4.dieRotationY = 0;
+            _this4.dieRotationX = 90;
             break;
 
           default:
-            _this2.dieRotationY = 360;
-            _this2.dieRotationX = 0;
+            _this4.dieRotationY = 360;
+            _this4.dieRotationX = 0;
             break;
         }
 
-        _this2.doGameMove(_this2.dieRoll);
+        _this4.doGameMove(_this4.dieRoll);
       }, 1000); // Start the die animation
 
       this.startDieAnimation();
@@ -2632,158 +2723,169 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
     },
     sendGameMove: function sendGameMove(roll) {
       window.axios.post("/game/gameMove/".concat(this.lobbyId), {
-        move: roll
+        move: roll,
+        gameState: this.game
       });
     },
     doGameMove: function doGameMove(roll) {
-      if (this.game.turn === this.selectedCharacter.name) {
-        this.sendGameMove(roll);
-      }
-
       if (this.game.turn === this.game.player1.name) {
-        if (this.game.player1.tile + roll <= 99) {
-          // Roll is lower than max tile so can move
-          this.movePlayer(this.game.player1, roll);
-          this.checkTrapLadder(this.game.player1); // If roll is 6, don't change turn
-
-          if (roll !== 6) {
-            this.game.turn = this.game.player2.name;
-          } else {
-            this.$emit('addGameMessage', "".concat(this.game.player1.name, " rolled a 6! They get another turn."));
-          }
-        } else {
-          // Rolled too high to win, will stay here until exact roll is met, loses his turn
-          if (roll !== 6) {
-            this.game.turn = this.game.player2.name;
-          } else {
-            this.$emit('addGameMessage', "".concat(this.game.player1.name, " rolled a 6! They get another turn."));
-          }
-        }
+        this.movePlayerCheck(this.game.player1, this.game.player2, roll);
       } else if (this.game.turn === this.game.player2.name) {
-        if (this.game.player2.tile + roll <= 99) {
-          // Roll is lower than max tile so can move
-          this.movePlayer(this.game.player2, roll);
-          this.checkTrapLadder(this.game.player2); // If roll is 6, don't change turn.
-
-          if (roll !== 6) {
-            this.game.turn = this.game.player1.name;
-          } else {
-            this.$emit('addGameMessage', "".concat(this.game.player2.name, " rolled a 6! They get another turn."));
-          }
-        } else {
-          // Rolled too high to win, will stay here until exact roll is met, loses his turn
-          if (roll !== 6) {
-            this.game.turn = this.game.player1.name;
-          } else {
-            this.$emit('addGameMessage', "".concat(this.game.player2.name, " rolled a 6! They get another turn."));
-          }
-        }
+        this.movePlayerCheck(this.game.player2, this.game.player1, roll);
       }
     },
-    checkTrapLadder: function checkTrapLadder(player) {
-      var _this3 = this;
+    movePlayerCheck: function movePlayerCheck(player, opponent, roll) {
+      var _this5 = this;
 
-      // If there is a trap there has to be a delay for the trap to spring
-      setTimeout(function () {
-        if (_this3.checkTrap(player)) {
-          setTimeout(function () {
-            _this3.checkLadder(player);
-          }, 1100);
+      console.log('playerMove: ', player, opponent, roll);
+
+      if (player.tile + roll <= 99) {
+        console.log('roll is under 99: '); // Roll is lower than max tile so can move
+
+        this.movePlayer(player, roll).then(function () {
+          _this5.checkTrapLadder(player).then(function () {
+            if (_this5.game.turn === _this5.selectedCharacter.name) {
+              _this5.sendGameMove(roll);
+            } // If roll is 6, don't change turn
+
+
+            if (roll !== 6) {
+              _this5.game.turn = opponent.name;
+            } else {
+              _this5.$emit('addGameMessage', "".concat(player.name, " rolled a 6! They get another turn."));
+            }
+          });
+        });
+      } else {
+        // Rolled too high to win, will stay here until exact roll is met, loses his turn
+        if (roll !== 6) {
+          this.game.turn = opponent.name;
         } else {
-          _this3.checkLadder(player);
+          this.$emit('addGameMessage', "".concat(player.name, " rolled a 6! They get another turn."));
         }
-      }, 1000);
+      }
     },
     movePlayer: function movePlayer(player, roll, moveReason) {
-      var _this4 = this;
+      var _this6 = this;
 
-      // Messages
-      if (roll > 0) {
-        if (moveReason === undefined) {
-          this.$emit('addGameMessage', "".concat(player.name, " is moving ").concat(roll, " spaces forward."));
+      return new Promise(function (resolve) {
+        // Messages
+        if (roll > 0) {
+          if (moveReason === undefined) {
+            _this6.$emit('addGameMessage', "".concat(player.name, " is moving ").concat(roll, " spaces forward."));
+          } else {
+            _this6.$emit('addGameMessage', "".concat(player.name, " is moving ").concat(roll, " spaces forward because ").concat(moveReason, "."));
+          }
         } else {
-          this.$emit('addGameMessage', "".concat(player.name, " is moving ").concat(roll, " spaces forward because ").concat(moveReason, "."));
-        }
-      } else {
-        this.$emit('addGameMessage', "Oh no! ".concat(player.name, " is going ").concat(Math.abs(roll), " spaces backwards because: ").concat(moveReason, "."));
-      } // Animate the player
+          _this6.$emit('addGameMessage', "Oh no! ".concat(player.name, " is going ").concat(Math.abs(roll), " spaces backwards because: ").concat(moveReason, "."));
+        } // Animate the player
 
 
-      this.animatePlayer(player, roll); // Set all the new data after the animation is done
+        _this6.animatePlayer(player, roll).then(function () {
+          // Set all the new data after the animation is done
+          // Move player to his new place on the board, remove him from the old tile
+          _this6.game.board[player.tile].pieces = _this6.game.board[player.tile].pieces.filter(function (e) {
+            return e.name !== player.name;
+          });
 
-      setTimeout(function () {
-        // Move player to his new place on the board, remove him from the old tile
-        _this4.game.board[player.tile].pieces = _this4.game.board[player.tile].pieces.filter(function (e) {
-          return e.name !== player.name;
+          _this6.game.board[player.tile + roll].pieces.push({
+            name: player.name,
+            id: player.playerNumber
+          }); // Add the roll to his current position
+
+
+          if (player.playerNumber === 1) {
+            _this6.game.player1.position = _this6.game.board[player.tile + roll].position;
+            _this6.game.player1.tile += roll;
+
+            if (_this6.game.player1.tile === 99) {
+              _this6.playerWon(_this6.game.player1);
+            }
+          } else {
+            _this6.game.player2.position = _this6.game.board[player.tile + roll].position;
+            _this6.game.player2.tile += roll;
+
+            if (_this6.game.player2.tile === 99) {
+              _this6.playerWon(_this6.game.player1);
+            }
+          }
+
+          resolve();
         });
-
-        _this4.game.board[player.tile + roll].pieces.push({
-          name: player.name,
-          id: player.playerNumber
-        }); // Add the roll to his current position
-
-
-        if (player.playerNumber === 1) {
-          _this4.game.player1.position = _this4.game.board[player.tile + roll].position;
-          _this4.game.player1.tile += roll;
-
-          if (_this4.game.player1.tile === 99) {
-            _this4.playerWon(_this4.game.player1);
-          }
-        } else {
-          _this4.game.player2.position = _this4.game.board[player.tile + roll].position;
-          _this4.game.player2.tile += roll;
-
-          if (_this4.game.player2.tile === 99) {
-            _this4.playerWon(_this4.game.player1);
-          }
-        }
-      }, 1000);
+      });
     },
     animatePlayer: function animatePlayer(player, roll) {
-      var oldPosition = player.position;
-      var newPosition = this.game.board[player.tile + roll].position;
-      var tileHeight = window.innerHeight * 0.8 / 10;
-      var x = newPosition.x - oldPosition.x;
-      var y = newPosition.y - oldPosition.y;
-      var element = this.$el.querySelector("#player-piece-".concat(player.playerNumber));
-      element.style.transition = "left ease-in-out 1000ms, bottom ease-in-out 1000ms";
+      var _this7 = this;
 
-      if (y > 0) {
-        element.style.bottom = tileHeight * y + tileHeight * 0.5 + "px";
-      } else if (y < 0) {
-        element.style.bottom = tileHeight * y + tileHeight * 0.5 + "px";
-      }
+      return new Promise(function (resolve) {
+        var oldPosition = player.position;
+        var newPosition = _this7.game.board[player.tile + roll].position;
+        var tileHeight = window.innerHeight * 0.8 / 10;
+        var x = newPosition.x - oldPosition.x;
+        var y = newPosition.y - oldPosition.y;
 
-      element.style.left = tileHeight * x + tileHeight * 0.5 + "px";
-      setTimeout(function () {
-        // Fix for the weird way VUE applies this to the wrong player after the player has been moved to another array index
-        // For some reason, even when the element has been selected for with ID, it applies this to the player that should not move
-        // after the board has updated, making them swap places. They still do, this just makes it invisible.
-        element.style.transition = "none";
-        element.style.bottom = "50%";
-        element.style.left = "50%";
-      }, 1000);
+        var element = _this7.$el.querySelector("#player-piece-".concat(player.playerNumber));
+
+        element.style.transition = "left ease-in-out 1000ms, bottom ease-in-out 1000ms";
+
+        if (y > 0) {
+          element.style.bottom = tileHeight * y + tileHeight * 0.5 + "px";
+        } else if (y < 0) {
+          element.style.bottom = tileHeight * y + tileHeight * 0.5 + "px";
+        }
+
+        element.style.left = tileHeight * x + tileHeight * 0.5 + "px";
+        setTimeout(function () {
+          // Fix for the weird way VUE applies this to the wrong player after the player has been moved to another array index
+          // For some reason, even when the element has been selected for with ID, it applies this to the player that should not move
+          // after the board has updated, making them swap places. They still do, this just makes it invisible.
+          element.style.transition = "none";
+          element.style.bottom = "50%";
+          element.style.left = "50%";
+          resolve();
+        }, 1000);
+      });
+    },
+    checkTrapLadder: function checkTrapLadder(player) {
+      var _this8 = this;
+
+      return new Promise(function (resolve) {
+        _this8.checkTrap(player).then(function () {
+          _this8.checkLadder(player).then(function () {
+            resolve();
+          });
+        });
+      });
     },
     checkTrap: function checkTrap(player) {
-      var trap = this.game.board[player.tile].trap;
+      var _this9 = this;
 
-      if (trap !== null && trap.start !== undefined) {
-        this.movePlayer(player, trap.start, this.generateTrapMessage(player));
-        return true;
-      } else {
-        return false;
-      }
+      return new Promise(function (resolve, reject) {
+        var trap = _this9.game.board[player.tile].trap;
+
+        if (trap !== null && trap.start !== undefined) {
+          _this9.movePlayer(player, trap.start, _this9.generateTrapMessage(player)).then(function () {
+            resolve(true);
+          });
+        } else {
+          resolve(false);
+        }
+      });
     },
     checkLadder: function checkLadder(player) {
-      var ladder = this.game.board[player.tile].ladder;
+      var _this10 = this;
 
-      if (ladder !== null && ladder.start !== undefined) {
-        this.movePlayer(player, ladder.start, this.generateLadderMessage(player));
-        return true;
-      } else {
-        return false;
-      }
+      return new Promise(function (resolve) {
+        var ladder = _this10.game.board[player.tile].ladder;
+
+        if (ladder !== null && ladder.start !== undefined) {
+          _this10.movePlayer(player, ladder.start, _this10.generateLadderMessage(player)).then(function () {
+            resolve(true);
+          });
+        } else {
+          resolve(false);
+        }
+      });
     },
     generateTrapMessage: function generateTrapMessage(player) {
       var possibleTraps = this.characters.filter(function (e) {
@@ -2849,95 +2951,36 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
           this.dieRotationX = 0;
         }
       }
-    },
-    toggleSelect: function toggleSelect() {
-      this.isSelectingCharacter = !this.isSelectingCharacter;
-    },
-    getImageUrl: function getImageUrl(name) {
-      return '/images/characters/' + name.replace(/ /g, "-") + '.jpg';
-    },
-    selectCharacter: function selectCharacter(character) {
-      var _this5 = this;
-
-      if (character.name !== this.opponentCharacter) {
-        this.selectedCharacter = character;
-
-        if (this.selectedCharacter.father !== "" && this.selectedCharacter.father.name === undefined) {
-          axios.get(this.selectedCharacter.father).then(function (response) {
-            _this5.selectedCharacter.father = response.data;
-          })["catch"](function (e) {
-            console.log('error: ', e);
-          });
-        }
-
-        if (this.selectedCharacter.mother !== "" && this.selectedCharacter.mother.name === undefined) {
-          axios.get(this.selectedCharacter.mother).then(function (response) {
-            _this5.selectedCharacter.mother = response.data;
-          })["catch"](function (e) {
-            console.log('error: ', e);
-          });
-        }
-
-        if (this.selectedCharacter.spouse !== "" && this.selectedCharacter.spouse.name === undefined) {
-          axios.get(this.selectedCharacter.spouse).then(function (response) {
-            _this5.selectedCharacter.spouse = response.data;
-          })["catch"](function (e) {
-            console.log('error: ', e);
-          });
-        }
-
-        window.axios.post("/lobby/updateCharacter/".concat(this.lobbyId), {
-          character: this.selectedCharacter.name
-        });
-        this.toggleSelect();
-      }
-    },
-    getCharacters: function getCharacters() {
-      var _this6 = this;
-
-      // counter to check when all requests are done
-      var count = 0;
-
-      var _loop = function _loop(i) {
-        axios.get("https://www.anapioficeandfire.com/api/characters?name=".concat(_this6.characters[i].name)).then(function (response) {
-          count++;
-          _this6.characters[i].data = response.data[0];
-        })["catch"](function (e) {
-          console.log("error: ".concat(_this6.characters[i]), e);
-        });
-      };
-
-      for (var i = 0; i < this.characters.length; i++) {
-        _loop(i);
-      }
     }
   },
   mounted: function mounted() {
-    var _this7 = this;
+    var _this11 = this;
 
     console.log('Game Component mounted.');
     window.addEventListener('mouseup', this.stopDrag);
-    this.getCharacters();
+    this.getCharacters().then(function () {
+      _this11.init();
+    });
     Echo.join('game.' + this.lobbyId).listen('ChangeCharacterEvent', function (event) {
-      _this7.opponentCharacter = event.characterName;
+      _this11.opponentCharacter = event.characterName;
     }).listen('StartGameEvent', function (event) {
       console.log('new game: ', event.game);
-      _this7.game = event.game;
+      _this11.game = event.game;
 
-      _this7.$emit('addGameMessage', "The game has started!");
+      _this11.$emit('addGameMessage', "The game has started!");
     }).listen('RestartGameEvent', function (event) {
       console.log('restarting game');
-      _this7.game = null;
+      _this11.game = null;
 
-      _this7.$emit('addGameMessage', "The game has been reset!");
+      _this11.$emit('addGameMessage', "The game has been reset!");
     }).listen('GameMoveEvent', function (event) {
       console.log('new game move: ', event);
 
-      _this7.doGameMove(event.move);
+      _this11.doGameMove(event.move);
     }).listen('GameMessageEvent', function (event) {
       console.log('new game message: ', event.message);
 
-      _this7.$emit('addGameMessage', 'event.message');
+      _this11.$emit('addGameMessage', 'event.message');
     });
   }
 });
@@ -45282,7 +45325,8 @@ var render = function() {
             attrs: {
               "lobby-id": _vm.lobby.url,
               "connected-players": _vm.connectedPlayers,
-              user: _vm.user
+              user: _vm.user,
+              gameState: JSON.parse(_vm.lobby.gameState)
             },
             on: { addGameMessage: _vm.addGameMessage }
           })
@@ -45416,7 +45460,7 @@ var render = function() {
               attrs: { src: "/images/icons/player.svg", alt: "" }
             }),
             _vm._v(" "),
-            _c("h3", [_vm._v(_vm._s(_vm.getOpponentUser()))])
+            _c("h3", [_vm._v(_vm._s(_vm.getOpponentUser().name))])
           ])
         : _vm._e(),
       _vm._v(" "),
@@ -45783,23 +45827,6 @@ var render = function() {
             },
             [_vm._v("Start Game")]
           )
-        : _vm._e(),
-      _vm._v(" "),
-      _vm.game !== null
-        ? _c("div", { staticClass: "game-control" }, [
-            _c(
-              "button",
-              {
-                staticClass: "btn",
-                on: {
-                  click: function($event) {
-                    return _vm.stopGame()
-                  }
-                }
-              },
-              [_vm._v("Stop Game")]
-            )
-          ])
         : _vm._e()
     ],
     1

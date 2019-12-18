@@ -27,6 +27,7 @@
             v-bind:lobby-id="lobby.url"
             v-bind:connected-players="connectedPlayers"
             v-bind:user="user"
+            v-bind:gameState="JSON.parse(lobby.gameState)"
             @addGameMessage="addGameMessage"
         />
         <chess
