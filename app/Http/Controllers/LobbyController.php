@@ -47,6 +47,7 @@ class LobbyController extends Controller
     public function startLobby(Request $request)
     {
         $user = $this->getUser();
+        // If the user is already in a lobby, delete and detach all other lobbies
         if ($user->lobbies->count() > 0) {
             $lobbies = $user->lobbies()->get();
             foreach ($lobbies as $lobby) {
@@ -54,13 +55,20 @@ class LobbyController extends Controller
             }
             $user->lobbies()->detach();
         }
+        // Generate a new lobby URL
         $lobbyName = uniqid();
+        // Check if there is a lobby already with that URL
         $lobby = Lobby::where('url', $lobbyName)->first();
-        if (!$lobby) {
-            $lobby = new Lobby;
-            $lobby->url = $lobbyName;
-            $lobby->save();
+
+        while ($lobby) {
+            $lobbyName = uniqid();
+            $lobby = Lobby::where('url', $lobbyName)->first();
         }
+
+        $lobby = new Lobby;
+        $lobby->url = $lobbyName;
+        $lobby->save();
+
         return redirect()->route('lobby', ['id' => $lobbyName]);
     }
 
@@ -83,6 +91,13 @@ class LobbyController extends Controller
             abort(403, 'Lobby does not exist');
         } else {
             $user = $this->getUser();
+            // Detach all lobbies if user is still in any
+            if ($user->lobbies()->count() > 0) {
+                $user->lobbies()->detach();
+            }
+
+            // If the user is not in the lobby try to attach
+            // If there are already 2 users, then the lobby is full
             if (!$lobby->users->contains($user)) {
                 if ($lobby->users->count() < 2 ) {
                     $user->lobbies()->attach($lobby);
@@ -90,10 +105,14 @@ class LobbyController extends Controller
                     abort(403, 'Lobby is full');
                 }
             }
+
+            // View
             return view('lobby', [
                 'lobby' => $lobby
             ]);
         }
+
+        // If none of the above returns a view, redirect to index
         return redirect()->route('index');
     }
 

@@ -159,19 +159,6 @@ nav .nav-item:hover {
   height: 35px;
 }
 
-.index-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  -webkit-transform: translate(-50%, -50%);
-          transform: translate(-50%, -50%);
-}
-
-.index-container h1,
-.index-container p {
-  text-shadow: 2px 2px 2px black;
-}
-
 #url-holder {
   display: none;
 }
@@ -402,6 +389,28 @@ nav .nav-item:hover {
     opacity: 0;
     border-radius: 50%;
   }
+}
+
+.index-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%);
+}
+
+.index-container h1,
+.index-container p {
+  text-shadow: 2px 2px 2px black;
+}
+
+.index-auth {
+  display: -webkit-box;
+  display: flex;
+}
+
+.index-auth .btn {
+  margin-right: 20px;
 }
 
 .lobby-container {

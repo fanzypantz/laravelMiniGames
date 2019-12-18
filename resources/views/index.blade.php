@@ -2,10 +2,19 @@
 
 @section('content')
 
-    @auth
-        <div class="index-container">
-            <h1>Welcome to the Game Of Thrones inspired Snakes and Ladders game</h1>
-            <p>I own no rights to the GOT franchise, this is a school project. Please don't sue me.</p>
+
+
+    <div class="index-container">
+        <h1>Welcome to my small Minigame site. It will have all sorts of minigames in the future!</h1>
+        <p>This is a hobby project of mine to get better at Laravel and Vue.</p>
+        @guest
+            <div class="index-auth">
+                <a class="btn" href="{{ route('register') }}">
+                    <strong>Sign up</strong>
+                </a>
+                <a class="btn" href="{{ route('login') }}">Log in</a>
+            </div>
+        @else
             <form action="{{ route('startLobby') }}" method="POST">
                 @csrf
                 @method('POST')
@@ -14,8 +23,8 @@
                     <span class="text">Start New Lobby</span>
                 </button>
             </form>
-        </div>
-    @endauth
+        @endguest
+    </div>
 
 
 @endsection
