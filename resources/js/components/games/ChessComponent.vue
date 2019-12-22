@@ -16,7 +16,7 @@
         },
 
         props: {
-            lobbyId: null,
+            lobby: null,
             connectedPlayers: null,
             user: null,
         },
@@ -28,7 +28,7 @@
             },
 
             restartGame() {
-                window.axios.post(`/game/restartGame/${this.lobbyId}`);
+                window.axios.post(`/game/restartGame/${this.lobby.url}`);
                 this.game = null;
                 this.addGameMessage(`The game has been reset!`);
             },
@@ -39,7 +39,7 @@
             },
 
             sendGameMove(roll){
-                window.axios.post(`/game/gameMove/${this.lobbyId}`, {
+                window.axios.post(`/game/gameMove/${this.lobby.url}`, {
                     move: roll,
                 });
             },
@@ -61,7 +61,7 @@
         mounted() {
             console.log('Game Component mounted.');
 
-            Echo.join('game.' + this.lobbyId)
+            Echo.join('game.' + this.lobby.url)
                 .listen('StartGameEvent', (event) => {
                     console.log('new game: ', event.game);
                     this.game = event.game;

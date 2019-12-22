@@ -18,6 +18,8 @@ class CreateLobbiesTable extends Migration
             $table->char('url', 100)->unique();
             $table->char('gameMode', 100)->default('');
             $table->json('gameState')->nullable();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
             $table->timestamps();
         });
     }

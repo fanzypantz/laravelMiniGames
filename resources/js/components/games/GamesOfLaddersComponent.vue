@@ -15,11 +15,11 @@
         <div class="dropdown" v-if="game === null">
             <div v-if="!isSelectingCharacter" class="buttons">
                 <button class="dropdown-current"  @click="toggleSelect()">Select a character</button>
-                <button v-if="opponentCharacter && selectedCharacter" @click="startGame()">
+                <button v-if="opponentCharacter && selectedCharacter && lobby.user.id === user.id" @click="startGame()">
                     <img class="button-icon" src="/images/icons/play.svg" alt="">
                     <span class="text">Start Game</span>
                 </button>
-                <button class="btn" @click="stopGame()">Stop Game</button>
+                <button v-if="lobby.user.id === user.id" class="btn" @click="stopGame()">Stop Game</button>
             </div>
 
             <div v-if="isSelectingCharacter" class="dropdown-select">
@@ -133,7 +133,7 @@
         },
 
         props: {
-            lobbyId: null,
+            lobby: null,
             connectedPlayers: null,
             user: null,
             gameState: null
@@ -230,7 +230,7 @@
                             console.log('error: ', e);
                         });
                     }
-                    window.axios.post(`/lobby/updateCharacter/${this.lobbyId}`, {
+                    window.axios.post(`/lobby/updateCharacter/${this.lobby.url}`, {
                         character: this.selectedCharacter.name,
                     });
                     this.toggleSelect();
@@ -358,18 +358,18 @@
                 game.turn = game.player1.name;
                 game.victory = null;
                 this.game = game;
-                window.axios.post(`/game/startGame/${this.lobbyId}`, {
+                window.axios.post(`/game/startGame/${this.lobby.url}`, {
                     game: this.game,
                 });
                 this.$emit('addGameMessage', `The game has started!`);
             },
 
             stopGame() {
-                window.axios.post(`/game/stopGame/${this.lobbyId}`);
+                window.axios.post(`/game/stopGame/${this.lobby.url}`);
             },
 
             restartGame() {
-                window.axios.post(`/game/restartGame/${this.lobbyId}`);
+                window.axios.post(`/game/restartGame/${this.lobby.url}`);
                 this.game = null;
                 this.$emit('addGameMessage', `The game has been reset!`);
             },
@@ -454,7 +454,7 @@
             },
 
             sendGameMove(roll){
-                window.axios.post(`/game/gameMove/${this.lobbyId}`, {
+                window.axios.post(`/game/gameMove/${this.lobby.url}`, {
                     move: roll,
                     gameState: this.game
                 });
@@ -685,7 +685,7 @@
                 this.init();
             });
 
-            Echo.join('game.' + this.lobbyId)
+            Echo.join('game.' + this.lobby.url)
                 .listen('ChangeCharacterEvent', (event) => {
                     this.opponentCharacter = event.characterName;
                 })

@@ -42,4 +42,9 @@ class User extends Authenticatable
     {
         return $this->belongsToMany('App\Lobby');
     }
+
+    public function lobby()
+    {
+        return $this->hasOne('App\Lobby');
+    }
 }

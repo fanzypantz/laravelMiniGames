@@ -1884,6 +1884,7 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
@@ -1912,11 +1913,13 @@ __webpack_require__.r(__webpack_exports__);
       }).name;
     },
     setGameMode: function setGameMode(gameMode) {
-      this.lobby.gameMode = gameMode;
-      this.gameMode = gameMode;
-      window.axios.post("/lobby/setGameMode/".concat(this.lobby.url), {
-        gameMode: gameMode
-      });
+      if (this.lobby.user.id === this.user.id) {
+        this.lobby.gameMode = gameMode;
+        this.gameMode = gameMode;
+        window.axios.post("/lobby/setGameMode/".concat(this.lobby.url), {
+          gameMode: gameMode
+        });
+      }
     },
     sendMessage: function sendMessage() {
       if (this.message !== '') {
@@ -2177,14 +2180,14 @@ __webpack_require__.r(__webpack_exports__);
     };
   },
   props: {
-    lobbyId: null,
+    lobby: null,
     connectedPlayers: null,
     user: null
   },
   methods: {
     startGame: function startGame() {},
     restartGame: function restartGame() {
-      window.axios.post("/game/restartGame/".concat(this.lobbyId));
+      window.axios.post("/game/restartGame/".concat(this.lobby.url));
       this.game = null;
       this.addGameMessage("The game has been reset!");
     },
@@ -2193,7 +2196,7 @@ __webpack_require__.r(__webpack_exports__);
       this.game.victory = player;
     },
     sendGameMove: function sendGameMove(roll) {
-      window.axios.post("/game/gameMove/".concat(this.lobbyId), {
+      window.axios.post("/game/gameMove/".concat(this.lobby.url), {
         move: roll
       });
     },
@@ -2214,7 +2217,7 @@ __webpack_require__.r(__webpack_exports__);
     var _this2 = this;
 
     console.log('Game Component mounted.');
-    Echo.join('game.' + this.lobbyId).listen('StartGameEvent', function (event) {
+    Echo.join('game.' + this.lobby.url).listen('StartGameEvent', function (event) {
       console.log('new game: ', event.game);
       _this2.game = event.game;
 
@@ -2390,7 +2393,7 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
     };
   },
   props: {
-    lobbyId: null,
+    lobby: null,
     connectedPlayers: null,
     user: null,
     gameState: null
@@ -2492,7 +2495,7 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
           });
         }
 
-        window.axios.post("/lobby/updateCharacter/".concat(this.lobbyId), {
+        window.axios.post("/lobby/updateCharacter/".concat(this.lobby.url), {
           character: this.selectedCharacter.name
         });
         this.toggleSelect();
@@ -2629,16 +2632,16 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
       game.turn = game.player1.name;
       game.victory = null;
       this.game = game;
-      window.axios.post("/game/startGame/".concat(this.lobbyId), {
+      window.axios.post("/game/startGame/".concat(this.lobby.url), {
         game: this.game
       });
       this.$emit('addGameMessage', "The game has started!");
     },
     stopGame: function stopGame() {
-      window.axios.post("/game/stopGame/".concat(this.lobbyId));
+      window.axios.post("/game/stopGame/".concat(this.lobby.url));
     },
     restartGame: function restartGame() {
-      window.axios.post("/game/restartGame/".concat(this.lobbyId));
+      window.axios.post("/game/restartGame/".concat(this.lobby.url));
       this.game = null;
       this.$emit('addGameMessage', "The game has been reset!");
     },
@@ -2722,7 +2725,7 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
       }
     },
     sendGameMove: function sendGameMove(roll) {
-      window.axios.post("/game/gameMove/".concat(this.lobbyId), {
+      window.axios.post("/game/gameMove/".concat(this.lobby.url), {
         move: roll,
         gameState: this.game
       });
@@ -2961,7 +2964,7 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
     this.getCharacters().then(function () {
       _this11.init();
     });
-    Echo.join('game.' + this.lobbyId).listen('ChangeCharacterEvent', function (event) {
+    Echo.join('game.' + this.lobby.url).listen('ChangeCharacterEvent', function (event) {
       _this11.opponentCharacter = event.characterName;
     }).listen('StartGameEvent', function (event) {
       console.log('new game: ', event.game);
@@ -45323,7 +45326,7 @@ var render = function() {
       _vm.gameMode === "Game Of Ladders"
         ? _c("games-of-ladders", {
             attrs: {
-              "lobby-id": _vm.lobby.url,
+              lobby: _vm.lobby,
               "connected-players": _vm.connectedPlayers,
               user: _vm.user,
               gameState: JSON.parse(_vm.lobby.gameState)
@@ -45335,9 +45338,10 @@ var render = function() {
       _vm.gameMode === "Chess"
         ? _c("chess", {
             attrs: {
-              "lobby-id": _vm.lobby.url,
+              lobby: _vm.lobby,
               "connected-players": _vm.connectedPlayers,
-              user: _vm.user
+              user: _vm.user,
+              gameState: JSON.parse(_vm.lobby.gameState)
             },
             on: { addGameMessage: _vm.addGameMessage }
           })
@@ -45481,7 +45485,9 @@ var render = function() {
                     [_vm._v("Select a character")]
                   ),
                   _vm._v(" "),
-                  _vm.opponentCharacter && _vm.selectedCharacter
+                  _vm.opponentCharacter &&
+                  _vm.selectedCharacter &&
+                  _vm.lobby.user.id === _vm.user.id
                     ? _c(
                         "button",
                         {
@@ -45504,18 +45510,20 @@ var render = function() {
                       )
                     : _vm._e(),
                   _vm._v(" "),
-                  _c(
-                    "button",
-                    {
-                      staticClass: "btn",
-                      on: {
-                        click: function($event) {
-                          return _vm.stopGame()
-                        }
-                      }
-                    },
-                    [_vm._v("Stop Game")]
-                  )
+                  _vm.lobby.user.id === _vm.user.id
+                    ? _c(
+                        "button",
+                        {
+                          staticClass: "btn",
+                          on: {
+                            click: function($event) {
+                              return _vm.stopGame()
+                            }
+                          }
+                        },
+                        [_vm._v("Stop Game")]
+                      )
+                    : _vm._e()
                 ])
               : _vm._e(),
             _vm._v(" "),

@@ -45,14 +45,17 @@ class GameController extends Controller
 
     public function stopGame(Request $request, $lobbyId)
     {
+        $user = $this->getUser();
         $lobby = Lobby::where('url', $lobbyId)->first();
         if (!$lobby) {
             abort(403, 'Lobby does not exist');
-        } else {
+        } elseif ($user->id === $lobby->user_id) {
             $lobby->gameMode = '';
             $lobby->gameState = null;
             $lobby->save();
             broadcast(new StopGameEvent($lobbyId));
+        } else {
+            abort(401, 'User does not own this lobby');
         }
     }
 

@@ -52,6 +52,7 @@ class LobbyController extends Controller
             $lobbies = $user->lobbies()->get();
             foreach ($lobbies as $lobby) {
                 $lobby->users()->detach();
+                $lobby->user()->dissociate();
                 $lobby->delete();
             }
         }
@@ -67,6 +68,7 @@ class LobbyController extends Controller
 
         $lobby = new Lobby;
         $lobby->url = $lobbyName;
+        $lobby->user()->associate($user);
         $lobby->save();
 
         return redirect()->route('lobby', ['id' => $lobbyName]);
@@ -93,8 +95,15 @@ class LobbyController extends Controller
             $user = $this->getUser();
             // Detach all lobbies if user is still in any
             if ($user->lobbies()->count() > 0) {
-                $user->lobbies()->detach();
+                $lobbies = $user->lobbies()->get();
+                foreach ($lobbies as $lobby) {
+                    $lobby->users()->detach($user);
+                    if ($lobby->user === $user->id) {
+                        $lobby->delete();
+                    }
+                }
             }
+            $user->save();
 
             // If the user is not in the lobby try to attach
             // If there are already 2 users, then the lobby is full

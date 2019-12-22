@@ -24,7 +24,7 @@
         <!--Games-->
         <games-of-ladders
             v-if="gameMode === 'Game Of Ladders'"
-            v-bind:lobby-id="lobby.url"
+            v-bind:lobby="lobby"
             v-bind:connected-players="connectedPlayers"
             v-bind:user="user"
             v-bind:gameState="JSON.parse(lobby.gameState)"
@@ -32,9 +32,10 @@
         />
         <chess
             v-if="gameMode === 'Chess'"
-            v-bind:lobby-id="lobby.url"
+            v-bind:lobby="lobby"
             v-bind:connected-players="connectedPlayers"
             v-bind:user="user"
+            v-bind:gameState="JSON.parse(lobby.gameState)"
             @addGameMessage="addGameMessage"
         />
 
@@ -83,11 +84,14 @@
             },
 
             setGameMode(gameMode) {
-                this.lobby.gameMode = gameMode;
-                this.gameMode = gameMode;
-                window.axios.post(`/lobby/setGameMode/${this.lobby.url}`, {
-                    gameMode: gameMode,
-                });
+                if (this.lobby.user.id === this.user.id) {
+                    this.lobby.gameMode = gameMode;
+                    this.gameMode = gameMode;
+                    window.axios.post(`/lobby/setGameMode/${this.lobby.url}`, {
+                        gameMode: gameMode,
+                    });
+                }
+
             },
 
             sendMessage() {
