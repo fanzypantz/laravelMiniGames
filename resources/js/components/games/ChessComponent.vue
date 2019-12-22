@@ -1,7 +1,16 @@
 <template>
     <div v-if="game !== null && game.board" class="board chess">
         <div class="row" v-for="row in game.board">
-            <chess-piece class="tile" v-for="(tile, index) in row" v-bind:key="index" v-bind:tile-data="tile"/>
+            <chess-piece
+                class="tile"
+                v-for="(tile, index) in row"
+                v-bind:key="index"
+                v-bind:tile-data="tile"
+                v-bind:can-drag="getDragPermission()"
+                v-bind:possibleTarget="checkInPossibleMoves(tile)"
+                @checkPossibleMoves="checkPossibleMoves"
+                @emptyPossibleMoves="emptyPossibleMoves"
+            />
         </div>
     </div>
 </template>
@@ -55,9 +64,14 @@
                 return board;
             },
 
+            getDragPermission() {
+                return this.game.turn === this.user.id;
+            },
+
             startGame() {
                 let game = {};
                 game.board = this.initiateBoard();
+                game.turn = this.user.id;
 
                 this.game = game;
             },
@@ -80,6 +94,18 @@
             },
 
             doGameMove(roll) {
+
+            },
+
+            checkInPossibleMoves() {
+                return false
+            },
+
+            checkPossibleMoves() {
+
+            },
+
+            emptyPossibleMoves() {
 
             },
 

@@ -1047,6 +1047,12 @@ nav .nav-item:hover {
 }
 
 .chess .tile {
+  display: -webkit-box;
+  display: flex;
+  -webkit-box-pack: center;
+          justify-content: center;
+  -webkit-box-align: center;
+          align-items: center;
   margin: 0;
   height: 100%;
   width: calc(100% / 8);
@@ -1067,5 +1073,14 @@ nav .nav-item:hover {
 
 .chess .row:nth-child(even) .tile:nth-child(even) {
   background-color: rgba(0, 0, 0, 0.8);
+}
+
+.chess .piece-icon {
+  width: 90%;
+}
+
+.white-piece {
+  -webkit-filter: invert(1);
+          filter: invert(1);
 }
 

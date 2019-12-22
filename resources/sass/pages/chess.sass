@@ -5,6 +5,9 @@
     flex-wrap: wrap
 
     .tile
+        display: flex
+        justify-content: center
+        align-items: center
         margin: 0
         height: 100%
         width: calc(100% / 8)
@@ -22,5 +25,8 @@
         &:nth-child(even) .tile:nth-child(even)
             background-color: $board-dark
 
+    .piece-icon
+        width: 90%
 
-
+.white-piece
+    filter: invert(1)

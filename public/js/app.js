@@ -2174,6 +2174,15 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
@@ -2228,9 +2237,13 @@ __webpack_require__.r(__webpack_exports__);
 
       return board;
     },
+    getDragPermission: function getDragPermission() {
+      return this.game.turn === this.user.id;
+    },
     startGame: function startGame() {
       var game = {};
       game.board = this.initiateBoard();
+      game.turn = this.user.id;
       this.game = game;
     },
     restartGame: function restartGame() {
@@ -2248,6 +2261,11 @@ __webpack_require__.r(__webpack_exports__);
       });
     },
     doGameMove: function doGameMove(roll) {},
+    checkInPossibleMoves: function checkInPossibleMoves() {
+      return false;
+    },
+    checkPossibleMoves: function checkPossibleMoves() {},
+    emptyPossibleMoves: function emptyPossibleMoves() {},
     addGameMessage: function addGameMessage(message) {
       var _this2 = this;
 
@@ -3054,12 +3072,25 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {};
   },
   props: {
-    tileData: null
+    tileData: null,
+    canDrag: false,
+    possibleTarget: false
   },
   methods: {
     getPieceImage: function getPieceImage(name) {
@@ -3068,6 +3099,23 @@ __webpack_require__.r(__webpack_exports__);
       } else {
         return "/images/icons/play.svg";
       }
+    },
+    handleDrop: function handleDrop(e, tileData) {
+      console.log('drop: ', tileData);
+      var payloadData = JSON.parse(e.dataTransfer.getData('text'));
+      console.log('payloadData: ', payloadData);
+      this.removeHighlight();
+    },
+    handleDragStart: function handleDragStart(e, tileData) {
+      console.log('dragStart: ', tileData);
+      e.dataTransfer.setData('text/plain', JSON.stringify(tileData));
+      this.highlightMoves(tileData);
+    },
+    highlightMoves: function highlightMoves(tileData) {
+      this.$emit('checkPossibleMoves', tileData);
+    },
+    removeHighlight: function removeHighlight() {
+      this.$emit('emptyPossibleMoves');
     }
   },
   mounted: function mounted() {}
@@ -45505,7 +45553,15 @@ var render = function() {
               return _c("chess-piece", {
                 key: index,
                 staticClass: "tile",
-                attrs: { "tile-data": tile }
+                attrs: {
+                  "tile-data": tile,
+                  "can-drag": _vm.getDragPermission(),
+                  possibleTarget: _vm.checkInPossibleMoves(tile)
+                },
+                on: {
+                  checkPossibleMoves: _vm.checkPossibleMoves,
+                  emptyPossibleMoves: _vm.emptyPossibleMoves
+                }
               })
             }),
             1
@@ -45960,14 +46016,40 @@ var render = function() {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  return _c("div", { staticClass: "piece" }, [
-    _vm.tileData !== null && _vm.tileData.type !== "empty"
-      ? _c("img", {
-          staticClass: "piece-icon",
-          attrs: { src: _vm.getPieceImage(_vm.tileData.type), alt: "" }
-        })
-      : _vm._e()
-  ])
+  return _c(
+    "div",
+    {
+      class: ["piece", _vm.possibleTarget ? "possible-target" : ""],
+      on: {
+        dragover: function(e) {
+          e.preventDefault()
+        },
+        drop: function(e) {
+          return _vm.handleDrop(e, _vm.tileData)
+        }
+      }
+    },
+    [
+      _vm.tileData !== null && _vm.tileData.type !== "empty"
+        ? _c("img", {
+            class: [
+              _vm.tileData.colour === "white" ? "white-piece" : "",
+              "piece-icon"
+            ],
+            attrs: {
+              draggable: _vm.canDrag,
+              src: _vm.getPieceImage(_vm.tileData.type),
+              alt: ""
+            },
+            on: {
+              dragstart: function(e) {
+                return _vm.handleDragStart(e, _vm.tileData)
+              }
+            }
+          })
+        : _vm._e()
+    ]
+  )
 }
 var staticRenderFns = []
 render._withStripped = true
