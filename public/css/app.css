@@ -1039,3 +1039,33 @@ nav .nav-item:hover {
   }
 }
 
+.chess {
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
+          flex-flow: row;
+  flex-wrap: wrap;
+}
+
+.chess .tile {
+  margin: 0;
+  height: 100%;
+  width: calc(100% / 8);
+  background-color: unset;
+}
+
+.chess .row {
+  display: -webkit-box;
+  display: flex;
+  height: calc(100% / 8);
+  width: 100%;
+  background-color: rgba(128, 128, 128, 0.8);
+}
+
+.chess .row:nth-child(odd) .tile:nth-child(odd) {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.chess .row:nth-child(even) .tile:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+

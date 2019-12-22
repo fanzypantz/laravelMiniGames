@@ -4,11 +4,15 @@
  * building robust, powerful web applications using Vue and Laravel.
  */
 import { gameOfLaddersConfig } from './components/games/configs/gameOfLaddersConfig'
+import { chessConfig } from './components/games/configs/chessConfig'
 
 require('./bootstrap');
 
 window.Vue = require('vue');
+
+// Vue Config files
 Vue.prototype.gameOfLaddersConfig = gameOfLaddersConfig;
+Vue.prototype.chessConfig = chessConfig;
 /**
  * The following block of code may be used to automatically register your
  * Vue components. It will recursively scan this directory for the Vue

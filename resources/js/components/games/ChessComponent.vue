@@ -1,12 +1,14 @@
 <template>
-    <div class="game">
-        <h2>chess</h2>
-
+    <div v-if="game !== null && game.board" class="board chess">
+        <div class="row" v-for="row in game.board">
+            <chess-piece class="tile" v-for="(tile, index) in row" v-bind:key="index" v-bind:tile-data="tile"/>
+        </div>
     </div>
-
 </template>
 
 <script>
+
+    import ChessPiece from './pieces/ChessPiece';
 
     export default {
         data() {
@@ -21,10 +23,43 @@
             user: null,
         },
 
+        components: {
+            ChessPiece,
+        },
+
         methods: {
 
-            startGame() {
+            initiateBoard()  {
+                let board = new Array(8).fill(null).map(()=>new Array(8).fill(null));
 
+                for (let x = 0; x < 8; x++) {
+                    for (let y = 0; y < 8; y++) {
+
+                        let piece = this.chessConfig.chessPieces.find( obj => (obj.position.x === x && obj.position.y === y));
+
+                        if (piece) {
+                            piece.isInInitialState = piece.type === 'pawn';
+                            board[y][x] = piece;
+                        } else {
+                            board[y][x] = {
+                                "type": "empty",
+                                "position": {
+                                    x: x,
+                                    y: y
+                                }
+                            };
+                        }
+                    }
+                }
+
+                return board;
+            },
+
+            startGame() {
+                let game = {};
+                game.board = this.initiateBoard();
+
+                this.game = game;
             },
 
             restartGame() {
@@ -60,6 +95,7 @@
 
         mounted() {
             console.log('Game Component mounted.');
+            this.startGame();
 
             Echo.join('game.' + this.lobby.url)
                 .listen('StartGameEvent', (event) => {

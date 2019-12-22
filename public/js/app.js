@@ -2165,6 +2165,7 @@ __webpack_require__.r(__webpack_exports__);
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _pieces_ChessPiece__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./pieces/ChessPiece */ "./resources/js/components/games/pieces/ChessPiece.vue");
 //
 //
 //
@@ -2173,6 +2174,7 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {
@@ -2184,8 +2186,53 @@ __webpack_require__.r(__webpack_exports__);
     connectedPlayers: null,
     user: null
   },
+  components: {
+    ChessPiece: _pieces_ChessPiece__WEBPACK_IMPORTED_MODULE_0__["default"]
+  },
   methods: {
-    startGame: function startGame() {},
+    initiateBoard: function initiateBoard() {
+      var _this = this;
+
+      var board = new Array(8).fill(null).map(function () {
+        return new Array(8).fill(null);
+      });
+
+      var _loop = function _loop(x) {
+        var _loop2 = function _loop2(y) {
+          var piece = _this.chessConfig.chessPieces.find(function (obj) {
+            return obj.position.x === x && obj.position.y === y;
+          });
+
+          if (piece) {
+            piece.isInInitialState = piece.type === 'pawn';
+            board[y][x] = piece;
+          } else {
+            board[y][x] = {
+              "type": "empty",
+              "position": {
+                x: x,
+                y: y
+              }
+            };
+          }
+        };
+
+        for (var y = 0; y < 8; y++) {
+          _loop2(y);
+        }
+      };
+
+      for (var x = 0; x < 8; x++) {
+        _loop(x);
+      }
+
+      return board;
+    },
+    startGame: function startGame() {
+      var game = {};
+      game.board = this.initiateBoard();
+      this.game = game;
+    },
     restartGame: function restartGame() {
       window.axios.post("/game/restartGame/".concat(this.lobby.url));
       this.game = null;
@@ -2202,39 +2249,40 @@ __webpack_require__.r(__webpack_exports__);
     },
     doGameMove: function doGameMove(roll) {},
     addGameMessage: function addGameMessage(message) {
-      var _this = this;
+      var _this2 = this;
 
       console.log('message: ', message);
       this.gameMessages.push(message);
       setTimeout(function () {
-        _this.gameMessages = _this.gameMessages.filter(function (e) {
+        _this2.gameMessages = _this2.gameMessages.filter(function (e) {
           return e !== message;
         });
       }, 10000);
     }
   },
   mounted: function mounted() {
-    var _this2 = this;
+    var _this3 = this;
 
     console.log('Game Component mounted.');
+    this.startGame();
     Echo.join('game.' + this.lobby.url).listen('StartGameEvent', function (event) {
       console.log('new game: ', event.game);
-      _this2.game = event.game;
+      _this3.game = event.game;
 
-      _this2.addGameMessage("The game has started!");
+      _this3.addGameMessage("The game has started!");
     }).listen('RestartGameEvent', function (event) {
       console.log('restarting game');
-      _this2.game = null;
+      _this3.game = null;
 
-      _this2.addGameMessage("The game has been reset!");
+      _this3.addGameMessage("The game has been reset!");
     }).listen('GameMoveEvent', function (event) {
       console.log('new game move: ', event);
 
-      _this2.doGameMove(event.move);
+      _this3.doGameMove(event.move);
     }).listen('GameMessageEvent', function (event) {
       console.log('new game message: ', event.message);
 
-      _this2.gameMessages.push(event.message);
+      _this3.gameMessages.push(event.message);
     });
   }
 });
@@ -2986,6 +3034,43 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
       _this11.$emit('addGameMessage', 'event.message');
     });
   }
+});
+
+/***/ }),
+
+/***/ "./node_modules/babel-loader/lib/index.js?!./node_modules/vue-loader/lib/index.js?!./resources/js/components/games/pieces/ChessPiece.vue?vue&type=script&lang=js&":
+/*!**********************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/babel-loader/lib??ref--4-0!./node_modules/vue-loader/lib??vue-loader-options!./resources/js/components/games/pieces/ChessPiece.vue?vue&type=script&lang=js& ***!
+  \**********************************************************************************************************************************************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+//
+//
+//
+//
+//
+//
+//
+/* harmony default export */ __webpack_exports__["default"] = ({
+  data: function data() {
+    return {};
+  },
+  props: {
+    tileData: null
+  },
+  methods: {
+    getPieceImage: function getPieceImage(name) {
+      if (name) {
+        return "/images/icons/chess/".concat(name, ".svg");
+      } else {
+        return "/images/icons/play.svg";
+      }
+    }
+  },
+  mounted: function mounted() {}
 });
 
 /***/ }),
@@ -45408,16 +45493,29 @@ var render = function() {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  return _vm._m(0)
+  return _vm.game !== null && _vm.game.board
+    ? _c(
+        "div",
+        { staticClass: "board chess" },
+        _vm._l(_vm.game.board, function(row) {
+          return _c(
+            "div",
+            { staticClass: "row" },
+            _vm._l(row, function(tile, index) {
+              return _c("chess-piece", {
+                key: index,
+                staticClass: "tile",
+                attrs: { "tile-data": tile }
+              })
+            }),
+            1
+          )
+        }),
+        0
+      )
+    : _vm._e()
 }
-var staticRenderFns = [
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "game" }, [_c("h2", [_vm._v("chess")])])
-  }
-]
+var staticRenderFns = []
 render._withStripped = true
 
 
@@ -45839,6 +45937,37 @@ var render = function() {
     ],
     1
   )
+}
+var staticRenderFns = []
+render._withStripped = true
+
+
+
+/***/ }),
+
+/***/ "./node_modules/vue-loader/lib/loaders/templateLoader.js?!./node_modules/vue-loader/lib/index.js?!./resources/js/components/games/pieces/ChessPiece.vue?vue&type=template&id=0607ebaf&":
+/*!**************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/vue-loader/lib??vue-loader-options!./resources/js/components/games/pieces/ChessPiece.vue?vue&type=template&id=0607ebaf& ***!
+  \**************************************************************************************************************************************************************************************************************************/
+/*! exports provided: render, staticRenderFns */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "render", function() { return render; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "staticRenderFns", function() { return staticRenderFns; });
+var render = function() {
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _c("div", { staticClass: "piece" }, [
+    _vm.tileData !== null && _vm.tileData.type !== "empty"
+      ? _c("img", {
+          staticClass: "piece-icon",
+          attrs: { src: _vm.getPieceImage(_vm.tileData.type), alt: "" }
+        })
+      : _vm._e()
+  ])
 }
 var staticRenderFns = []
 render._withStripped = true
@@ -57994,8 +58123,10 @@ module.exports = function(module) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _components_games_configs_gameOfLaddersConfig__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./components/games/configs/gameOfLaddersConfig */ "./resources/js/components/games/configs/gameOfLaddersConfig.js");
 /* harmony import */ var _components_games_configs_gameOfLaddersConfig__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_components_games_configs_gameOfLaddersConfig__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _bgAnimation__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./bgAnimation */ "./resources/js/bgAnimation.js");
-/* harmony import */ var _layout__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./layout */ "./resources/js/layout.js");
+/* harmony import */ var _components_games_configs_chessConfig__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./components/games/configs/chessConfig */ "./resources/js/components/games/configs/chessConfig.js");
+/* harmony import */ var _components_games_configs_chessConfig__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_components_games_configs_chessConfig__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _bgAnimation__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./bgAnimation */ "./resources/js/bgAnimation.js");
+/* harmony import */ var _layout__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./layout */ "./resources/js/layout.js");
 /**
  * First we will load all of this project's JavaScript dependencies which
  * includes Vue and other libraries. It is a great starting point when
@@ -58003,10 +58134,13 @@ __webpack_require__.r(__webpack_exports__);
  */
 
 
+
 __webpack_require__(/*! ./bootstrap */ "./resources/js/bootstrap.js");
 
-window.Vue = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.common.js");
+window.Vue = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.common.js"); // Vue Config files
+
 Vue.prototype.gameOfLaddersConfig = _components_games_configs_gameOfLaddersConfig__WEBPACK_IMPORTED_MODULE_0__["gameOfLaddersConfig"];
+Vue.prototype.chessConfig = _components_games_configs_chessConfig__WEBPACK_IMPORTED_MODULE_1__["chessConfig"];
 /**
  * The following block of code may be used to automatically register your
  * Vue components. It will recursively scan this directory for the Vue
@@ -58028,9 +58162,9 @@ var app = new Vue({
   el: '#app'
 });
 
-_bgAnimation__WEBPACK_IMPORTED_MODULE_1__["default"].startAnimation();
+_bgAnimation__WEBPACK_IMPORTED_MODULE_2__["default"].startAnimation();
 
-window.layoutModule = _layout__WEBPACK_IMPORTED_MODULE_2__["default"];
+window.layoutModule = _layout__WEBPACK_IMPORTED_MODULE_3__["default"];
 
 /***/ }),
 
@@ -58456,6 +58590,245 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "./resources/js/components/games/configs/chessConfig.js":
+/*!**************************************************************!*\
+  !*** ./resources/js/components/games/configs/chessConfig.js ***!
+  \**************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = {
+  chessConfig: {
+    "chessPieces": [{
+      "type": "pawn",
+      "colour": "white",
+      "position": {
+        x: 7,
+        y: 6
+      }
+    }, {
+      "type": "pawn",
+      "colour": "white",
+      "position": {
+        x: 6,
+        y: 6
+      }
+    }, {
+      "type": "pawn",
+      "colour": "white",
+      "position": {
+        x: 5,
+        y: 6
+      }
+    }, {
+      "type": "pawn",
+      "colour": "white",
+      "position": {
+        x: 4,
+        y: 6
+      }
+    }, {
+      "type": "pawn",
+      "colour": "white",
+      "position": {
+        x: 3,
+        y: 6
+      }
+    }, {
+      "type": "pawn",
+      "colour": "white",
+      "position": {
+        x: 2,
+        y: 6
+      }
+    }, {
+      "type": "pawn",
+      "colour": "white",
+      "position": {
+        x: 1,
+        y: 6
+      }
+    }, {
+      "type": "pawn",
+      "colour": "white",
+      "position": {
+        x: 0,
+        y: 6
+      }
+    }, {
+      "type": "pawn",
+      "colour": "black",
+      "position": {
+        x: 7,
+        y: 1
+      }
+    }, {
+      "type": "pawn",
+      "colour": "black",
+      "position": {
+        x: 6,
+        y: 1
+      }
+    }, {
+      "type": "pawn",
+      "colour": "black",
+      "position": {
+        x: 5,
+        y: 1
+      }
+    }, {
+      "type": "pawn",
+      "colour": "black",
+      "position": {
+        x: 4,
+        y: 1
+      }
+    }, {
+      "type": "pawn",
+      "colour": "black",
+      "position": {
+        x: 3,
+        y: 1
+      }
+    }, {
+      "type": "pawn",
+      "colour": "black",
+      "position": {
+        x: 2,
+        y: 1
+      }
+    }, {
+      "type": "pawn",
+      "colour": "black",
+      "position": {
+        x: 1,
+        y: 1
+      }
+    }, {
+      "type": "pawn",
+      "colour": "black",
+      "position": {
+        x: 0,
+        y: 1
+      }
+    }, {
+      "type": "rook",
+      "colour": "black",
+      "position": {
+        x: 7,
+        y: 0
+      }
+    }, {
+      "type": "rook",
+      "colour": "white",
+      "position": {
+        x: 7,
+        y: 7
+      }
+    }, {
+      "type": "rook",
+      "colour": "black",
+      "position": {
+        x: 0,
+        y: 0
+      }
+    }, {
+      "type": "rook",
+      "colour": "white",
+      "position": {
+        x: 0,
+        y: 7
+      }
+    }, {
+      "type": "knight",
+      "colour": "white",
+      "position": {
+        x: 6,
+        y: 7
+      }
+    }, {
+      "type": "knight",
+      "colour": "white",
+      "position": {
+        x: 1,
+        y: 7
+      }
+    }, {
+      "type": "knight",
+      "colour": "black",
+      "position": {
+        x: 6,
+        y: 0
+      }
+    }, {
+      "type": "knight",
+      "colour": "black",
+      "position": {
+        x: 1,
+        y: 0
+      }
+    }, {
+      "type": "bishop",
+      "colour": "white",
+      "position": {
+        x: 5,
+        y: 7
+      }
+    }, {
+      "type": "bishop",
+      "colour": "white",
+      "position": {
+        x: 2,
+        y: 7
+      }
+    }, {
+      "type": "bishop",
+      "colour": "black",
+      "position": {
+        x: 5,
+        y: 0
+      }
+    }, {
+      "type": "bishop",
+      "colour": "black",
+      "position": {
+        x: 2,
+        y: 0
+      }
+    }, {
+      "type": "queen",
+      "colour": "white",
+      "position": {
+        x: 4,
+        y: 7
+      }
+    }, {
+      "type": "queen",
+      "colour": "black",
+      "position": {
+        x: 4,
+        y: 0
+      }
+    }, {
+      "type": "king",
+      "colour": "white",
+      "position": {
+        x: 3,
+        y: 7
+      }
+    }, {
+      "type": "king",
+      "colour": "black",
+      "position": {
+        x: 3,
+        y: 0
+      }
+    }]
+  }
+};
+
+/***/ }),
+
 /***/ "./resources/js/components/games/configs/gameOfLaddersConfig.js":
 /*!**********************************************************************!*\
   !*** ./resources/js/components/games/configs/gameOfLaddersConfig.js ***!
@@ -58636,6 +59009,75 @@ module.exports = {
     }]
   }
 };
+
+/***/ }),
+
+/***/ "./resources/js/components/games/pieces/ChessPiece.vue":
+/*!*************************************************************!*\
+  !*** ./resources/js/components/games/pieces/ChessPiece.vue ***!
+  \*************************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _ChessPiece_vue_vue_type_template_id_0607ebaf___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./ChessPiece.vue?vue&type=template&id=0607ebaf& */ "./resources/js/components/games/pieces/ChessPiece.vue?vue&type=template&id=0607ebaf&");
+/* harmony import */ var _ChessPiece_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./ChessPiece.vue?vue&type=script&lang=js& */ "./resources/js/components/games/pieces/ChessPiece.vue?vue&type=script&lang=js&");
+/* empty/unused harmony star reexport *//* harmony import */ var _node_modules_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../../../../node_modules/vue-loader/lib/runtime/componentNormalizer.js */ "./node_modules/vue-loader/lib/runtime/componentNormalizer.js");
+
+
+
+
+
+/* normalize component */
+
+var component = Object(_node_modules_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__["default"])(
+  _ChessPiece_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__["default"],
+  _ChessPiece_vue_vue_type_template_id_0607ebaf___WEBPACK_IMPORTED_MODULE_0__["render"],
+  _ChessPiece_vue_vue_type_template_id_0607ebaf___WEBPACK_IMPORTED_MODULE_0__["staticRenderFns"],
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* hot reload */
+if (false) { var api; }
+component.options.__file = "resources/js/components/games/pieces/ChessPiece.vue"
+/* harmony default export */ __webpack_exports__["default"] = (component.exports);
+
+/***/ }),
+
+/***/ "./resources/js/components/games/pieces/ChessPiece.vue?vue&type=script&lang=js&":
+/*!**************************************************************************************!*\
+  !*** ./resources/js/components/games/pieces/ChessPiece.vue?vue&type=script&lang=js& ***!
+  \**************************************************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _node_modules_babel_loader_lib_index_js_ref_4_0_node_modules_vue_loader_lib_index_js_vue_loader_options_ChessPiece_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../../node_modules/babel-loader/lib??ref--4-0!../../../../../node_modules/vue-loader/lib??vue-loader-options!./ChessPiece.vue?vue&type=script&lang=js& */ "./node_modules/babel-loader/lib/index.js?!./node_modules/vue-loader/lib/index.js?!./resources/js/components/games/pieces/ChessPiece.vue?vue&type=script&lang=js&");
+/* empty/unused harmony star reexport */ /* harmony default export */ __webpack_exports__["default"] = (_node_modules_babel_loader_lib_index_js_ref_4_0_node_modules_vue_loader_lib_index_js_vue_loader_options_ChessPiece_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0__["default"]); 
+
+/***/ }),
+
+/***/ "./resources/js/components/games/pieces/ChessPiece.vue?vue&type=template&id=0607ebaf&":
+/*!********************************************************************************************!*\
+  !*** ./resources/js/components/games/pieces/ChessPiece.vue?vue&type=template&id=0607ebaf& ***!
+  \********************************************************************************************/
+/*! exports provided: render, staticRenderFns */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _node_modules_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_vue_loader_lib_index_js_vue_loader_options_ChessPiece_vue_vue_type_template_id_0607ebaf___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../../node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!../../../../../node_modules/vue-loader/lib??vue-loader-options!./ChessPiece.vue?vue&type=template&id=0607ebaf& */ "./node_modules/vue-loader/lib/loaders/templateLoader.js?!./node_modules/vue-loader/lib/index.js?!./resources/js/components/games/pieces/ChessPiece.vue?vue&type=template&id=0607ebaf&");
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "render", function() { return _node_modules_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_vue_loader_lib_index_js_vue_loader_options_ChessPiece_vue_vue_type_template_id_0607ebaf___WEBPACK_IMPORTED_MODULE_0__["render"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "staticRenderFns", function() { return _node_modules_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_vue_loader_lib_index_js_vue_loader_options_ChessPiece_vue_vue_type_template_id_0607ebaf___WEBPACK_IMPORTED_MODULE_0__["staticRenderFns"]; });
+
+
 
 /***/ }),
 

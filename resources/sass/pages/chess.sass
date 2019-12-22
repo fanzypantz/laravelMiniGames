@@ -1,0 +1,26 @@
+
+
+.chess
+    flex-flow: row
+    flex-wrap: wrap
+
+    .tile
+        margin: 0
+        height: 100%
+        width: calc(100% / 8)
+        background-color: unset
+
+    .row
+        display: flex
+        height: calc(100% / 8)
+        width: 100%
+        background-color: $board
+
+        &:nth-child(odd) .tile:nth-child(odd)
+            background-color: $board-dark
+
+        &:nth-child(even) .tile:nth-child(even)
+            background-color: $board-dark
+
+
+
