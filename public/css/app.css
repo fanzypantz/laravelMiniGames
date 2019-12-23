@@ -1079,6 +1079,14 @@ nav .nav-item:hover {
   width: 90%;
 }
 
+.chess .possible-target {
+  background-color: #245c9b !important;
+}
+
+.chess .tile-number {
+  color: red !important;
+}
+
 .white-piece {
   -webkit-filter: invert(1);
           filter: invert(1);

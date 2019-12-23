@@ -12,6 +12,7 @@
             alt=""
             @dragstart="(e) => handleDragStart(e, tileData)"
         >
+        <p class="tile-number">{{tileData.position.x}}-{{tileData.position.y}}</p>
     </div>
 
 </template>
@@ -41,10 +42,14 @@
             },
 
             handleDrop(e, tileData) {
-                console.log('drop: ', tileData);
+                console.log('dropData: ', tileData);
                 let payloadData = JSON.parse(e.dataTransfer.getData('text'));
                 console.log('payloadData: ', payloadData);
 
+                // If this tile has been marked as a possible target continue the logic
+                if (this.possibleTarget) {
+                    console.log('could drop here: ', );
+                }
 
                 this.removeHighlight();
             },

@@ -2166,6 +2166,14 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _pieces_ChessPiece__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./pieces/ChessPiece */ "./resources/js/components/games/pieces/ChessPiece.vue");
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
 //
 //
 //
@@ -2187,7 +2195,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {
-      game: null
+      game: null,
+      possibleMoves: []
     };
   },
   props: {
@@ -2199,6 +2208,9 @@ __webpack_require__.r(__webpack_exports__);
     ChessPiece: _pieces_ChessPiece__WEBPACK_IMPORTED_MODULE_0__["default"]
   },
   methods: {
+    /*
+        Utility
+    */
     initiateBoard: function initiateBoard() {
       var _this = this;
 
@@ -2240,6 +2252,19 @@ __webpack_require__.r(__webpack_exports__);
     getDragPermission: function getDragPermission() {
       return this.game.turn === this.user.id;
     },
+    convertNumber: function convertNumber(number) {
+      if (number > 7) {
+        return 7;
+      } else if (number < 0) {
+        return 0;
+      } else {
+        return number;
+      }
+    },
+
+    /*
+        Game control logic
+    */
     startGame: function startGame() {
       var game = {};
       game.board = this.initiateBoard();
@@ -2261,11 +2286,231 @@ __webpack_require__.r(__webpack_exports__);
       });
     },
     doGameMove: function doGameMove(roll) {},
-    checkInPossibleMoves: function checkInPossibleMoves() {
-      return false;
+
+    /*
+        Check possible game moves
+    */
+    checkInPossibleMoves: function checkInPossibleMoves(tileData) {
+      return this.possibleMoves.filter(function (move) {
+        return move.x === tileData.position.x && move.y === tileData.position.y;
+      }).length > 0;
     },
-    checkPossibleMoves: function checkPossibleMoves() {},
-    emptyPossibleMoves: function emptyPossibleMoves() {},
+    checkPossibleMoves: function checkPossibleMoves(tileData) {
+      var possibleMoves = [];
+      console.log('tileData: ', tileData);
+
+      switch (tileData.type) {
+        case "knight":
+          var knightPositions = [{
+            y: tileData.position.y - 1,
+            x: tileData.position.x - 2
+          }, {
+            y: tileData.position.y + 1,
+            x: tileData.position.x - 2
+          }, {
+            y: tileData.position.y - 2,
+            x: tileData.position.x - 1
+          }, {
+            y: tileData.position.y - 2,
+            x: tileData.position.x + 1
+          }, {
+            y: tileData.position.y - 1,
+            x: tileData.position.x + 2
+          }, {
+            y: tileData.position.y + 1,
+            x: tileData.position.x + 2
+          }, {
+            y: tileData.position.y + 2,
+            x: tileData.position.x + 1
+          }, {
+            y: tileData.position.y + 2,
+            x: tileData.position.x - 1
+          }];
+
+          for (var i = 0; i < knightPositions.length; i++) {
+            if (knightPositions[i].y < 0 || knightPositions[i].x < 0 || knightPositions[i].y > 7 || knightPositions[i].x > 7) {
+              continue;
+            }
+
+            if (this.game.board[knightPositions[i].y][knightPositions[i].x].colour !== tileData.colour || this.game.board[knightPositions[i].y][knightPositions[i].x].type === "empty") {
+              possibleMoves.push(knightPositions[i]);
+            }
+          }
+
+          break;
+
+        case "queen":
+          possibleMoves.push.apply(possibleMoves, _toConsumableArray(this.checkDiagonal(tileData))); //     possibleMoves = [...possibleMoves, ...this.checkPossibleDiagonal(data)];
+          //     possibleMoves = [...possibleMoves, ...this.checkPossibleAxis(data)];
+
+          break;
+
+        case "rook":
+          // possibleMoves = [...possibleMoves, ...this.checkPossibleAxis(data)];
+          break;
+
+        case "bishop":
+          // possibleMoves = [...possibleMoves, ...this.checkPossibleDiagonal(data)];
+          break;
+
+        case "king":
+          // let kingPositions = [
+          //     {y: data.position.y - 1, x: data.position.x - 1},
+          //     {y: data.position.y - 1, x: data.position.x},
+          //     {y: data.position.y - 1, x: data.position.x + 1},
+          //     {y: data.position.y, x: data.position.x + 1},
+          //     {y: data.position.y + 1, x: data.position.x + 1},
+          //     {y: data.position.y + 1, x: data.position.x},
+          //     {y: data.position.y + 1, x: data.position.x - 1},
+          //     {y: data.position.y, x: data.position.x - 1},
+          // ];
+          // for (let i = 0; i < kingPositions.length; i++) {
+          //     if (kingPositions[i].y < 0 || kingPositions[i].x < 0 || kingPositions[i].y > 7 || kingPositions[i].x > 7) {
+          //         continue
+          //     }
+          //     if (this.state.gameState.board[kingPositions[i].y][kingPositions[i].x].colour !== data.color) {
+          //         possibleMoves.push(kingPositions[i]);
+          //     }
+          // }
+          break;
+
+        default:
+          possibleMoves.push.apply(possibleMoves, _toConsumableArray(this.checkDiagonal(tileData))); // let pawnPositions = [];
+          // if (this.state.youArePlayer === 0) {
+          //     if (this.state.gameState.board[data.position.y - 1][data.position.x].piece === 'empty') {
+          //         pawnPositions.push({y: data.position.y - 1, x: data.position.x});
+          //     }
+          //     if (this.state.gameState.board[data.position.y - 1][data.position.x + 1] !== undefined) {
+          //         if (this.state.gameState.board[data.position.y - 1][data.position.x + 1].colour === 'black') {
+          //             pawnPositions.push({y: data.position.y - 1, x: data.position.x + 1});
+          //         }
+          //     }
+          //     if (this.state.gameState.board[data.position.y - 1][data.position.x - 1] !== undefined) {
+          //         if (this.state.gameState.board[data.position.y - 1][data.position.x - 1].colour === 'black') {
+          //             pawnPositions.push({y: data.position.y - 1, x: data.position.x - 1});
+          //         }
+          //     }
+          //     if (data.isInInitialState && this.state.gameState.board[data.position.y - 2][data.position.x].piece === 'empty') {
+          //         pawnPositions.push({y: data.position.y - 2, x: data.position.x });
+          //     }
+          // } else {
+          //     if (this.state.gameState.board[data.position.y + 1][data.position.x].piece === 'empty') {
+          //         pawnPositions.push({y: data.position.y + 1, x: data.position.x});
+          //     }
+          //     if (this.state.gameState.board[data.position.y + 1][data.position.x + 1] !== undefined) {
+          //         if (this.state.gameState.board[data.position.y + 1][data.position.x + 1].colour === 'white') {
+          //             pawnPositions.push({y: data.position.y + 1, x: data.position.x + 1});
+          //         }
+          //     }
+          //     if (this.state.gameState.board[data.position.y + 1][data.position.x - 1] !== undefined) {
+          //         if (this.state.gameState.board[data.position.y + 1][data.position.x - 1].colour === 'white') {
+          //             pawnPositions.push({y: data.position.y + 1, x: data.position.x - 1});
+          //         }
+          //     }
+          //     if (data.isInInitialState && this.state.gameState.board[data.position.y + 2][data.position.x].piece === 'empty') {
+          //         pawnPositions.push({y: data.position.y + 2, x: data.position.x });
+          //     }
+          // }
+          // for (let i = 0; i < pawnPositions.length; i++) {
+          //     if (pawnPositions[i].y < 0 || pawnPositions[i].x < 0 || pawnPositions[i].y > 7 || pawnPositions[i].x > 7) {
+          //         continue
+          //     }
+          //     if (this.state.gameState.board[pawnPositions[i].y][pawnPositions[i].x].colour !== data.color) {
+          //         possibleMoves.push(pawnPositions[i]);
+          //     }
+          // }
+
+          break;
+      }
+
+      this.possibleMoves = possibleMoves;
+    },
+    checkDiagonal: function checkDiagonal(tileData) {
+      var possibleMoves = [];
+      var edgePositions = [{
+        x: this.convertNumber(tileData.position.x - tileData.position.y),
+        y: this.convertNumber(tileData.position.y - tileData.position.x)
+      }, {
+        x: this.convertNumber(tileData.position.x + tileData.position.y),
+        y: this.convertNumber(tileData.position.x - (7 - tileData.position.y))
+      }, {
+        x: this.convertNumber(tileData.position.x + (7 - tileData.position.y)),
+        y: this.convertNumber(tileData.position.y + (7 - tileData.position.x))
+      }, {
+        x: this.convertNumber(tileData.position.x + tileData.position.y - 7),
+        y: this.convertNumber(tileData.position.x + tileData.position.y)
+      }];
+
+      for (var i = 0; i < edgePositions.length; i++) {
+        var angle = Math.atan2(edgePositions[i].y - tileData.position.y, edgePositions[i].x - tileData.position.x) * 180 / Math.PI;
+        var distance = Math.floor(Math.sqrt(Math.pow(tileData.position.x - edgePositions[i].x, 2) + Math.pow(tileData.position.y - edgePositions[i].y, 2)));
+        possibleMoves.push.apply(possibleMoves, _toConsumableArray(this.checkDiagonalJump(angle, distance, tileData)));
+      }
+
+      console.log('possibleMoves: ', possibleMoves);
+      return possibleMoves;
+    },
+    checkDiagonalJump: function checkDiagonalJump(angle, distance, tileData) {
+      var x;
+      var y;
+      var possibleMoves = [];
+
+      for (var i = 1; i < distance + 1; i++) {
+        switch (angle) {
+          case 135:
+            x = tileData.position.x - i;
+            y = tileData.position.y + i;
+            break;
+
+          case -135:
+            x = tileData.position.x - i;
+            y = tileData.position.y - i;
+            break;
+
+          case -45:
+            x = tileData.position.x + i;
+            y = tileData.position.y - i;
+            break;
+
+          case 45:
+            x = tileData.position.x + i;
+            y = tileData.position.y + i;
+            break;
+
+          default:
+            break;
+        }
+
+        if (x <= 7 && x >= 0 && y <= 7 && y >= 0) {
+          if (this.game.board[y][x].type !== "empty") {
+            if (this.game.board[y][x].colour !== tileData.colour) {
+              possibleMoves.push({
+                y: y,
+                x: x
+              });
+            }
+
+            return possibleMoves;
+          } else {
+            possibleMoves.push({
+              y: y,
+              x: x
+            });
+          }
+        } else {
+          return possibleMoves;
+        }
+      }
+
+      return possibleMoves;
+    },
+    emptyPossibleMoves: function emptyPossibleMoves() {
+      this.possibleMoves = [];
+    },
+
+    /*
+        Game message system
+    */
     addGameMessage: function addGameMessage(message) {
       var _this2 = this;
 
@@ -2281,7 +2526,9 @@ __webpack_require__.r(__webpack_exports__);
   mounted: function mounted() {
     var _this3 = this;
 
-    console.log('Game Component mounted.');
+    console.log('Game Component mounted.'); // Bind the mouse up to emptying possible moves, if the user tries to drop outside of the board.
+
+    window.addEventListener('dragend', this.emptyPossibleMoves);
     this.startGame();
     Echo.join('game.' + this.lobby.url).listen('StartGameEvent', function (event) {
       console.log('new game: ', event.game);
@@ -3083,6 +3330,7 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {};
@@ -3101,9 +3349,14 @@ __webpack_require__.r(__webpack_exports__);
       }
     },
     handleDrop: function handleDrop(e, tileData) {
-      console.log('drop: ', tileData);
+      console.log('dropData: ', tileData);
       var payloadData = JSON.parse(e.dataTransfer.getData('text'));
-      console.log('payloadData: ', payloadData);
+      console.log('payloadData: ', payloadData); // If this tile has been marked as a possible target continue the logic
+
+      if (this.possibleTarget) {
+        console.log('could drop here: ');
+      }
+
       this.removeHighlight();
     },
     handleDragStart: function handleDragStart(e, tileData) {
@@ -46047,7 +46300,15 @@ var render = function() {
               }
             }
           })
-        : _vm._e()
+        : _vm._e(),
+      _vm._v(" "),
+      _c("p", { staticClass: "tile-number" }, [
+        _vm._v(
+          _vm._s(_vm.tileData.position.x) +
+            "-" +
+            _vm._s(_vm.tileData.position.y)
+        )
+      ])
     ]
   )
 }
