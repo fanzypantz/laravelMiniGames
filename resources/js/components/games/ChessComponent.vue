@@ -155,6 +155,7 @@
                         break;
                     case "queen":
                         possibleMoves.push(...this.checkDiagonal(tileData));
+                        possibleMoves.push(...this.checkAxis(tileData));
                     //     possibleMoves = [...possibleMoves, ...this.checkPossibleDiagonal(data)];
                     //     possibleMoves = [...possibleMoves, ...this.checkPossibleAxis(data)];
                         break;
@@ -186,6 +187,7 @@
                         break;
                     default:
                         possibleMoves.push(...this.checkDiagonal(tileData));
+                        possibleMoves.push(...this.checkAxis(tileData));
                         // let pawnPositions = [];
                         // if (this.state.youArePlayer === 0) {
                         //     if (this.state.gameState.board[data.position.y - 1][data.position.x].piece === 'empty') {
@@ -306,6 +308,19 @@
                     }
                 }
                 return possibleMoves;
+            },
+
+            checkAxis(tileData) {
+                let possibleMoves = [];
+                let position = tileData.position;
+
+                for (let i = position.x; i >= 0; i--) {
+                    console.log('X-: ', this.game.board[position.y][i].position);
+                    if (this.game.board[position.y][i]) {
+
+                    }
+                }
+
             },
 
             emptyPossibleMoves() {

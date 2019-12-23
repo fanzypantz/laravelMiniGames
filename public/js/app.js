@@ -2340,7 +2340,8 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
           break;
 
         case "queen":
-          possibleMoves.push.apply(possibleMoves, _toConsumableArray(this.checkDiagonal(tileData))); //     possibleMoves = [...possibleMoves, ...this.checkPossibleDiagonal(data)];
+          possibleMoves.push.apply(possibleMoves, _toConsumableArray(this.checkDiagonal(tileData)));
+          possibleMoves.push.apply(possibleMoves, _toConsumableArray(this.checkAxis(tileData))); //     possibleMoves = [...possibleMoves, ...this.checkPossibleDiagonal(data)];
           //     possibleMoves = [...possibleMoves, ...this.checkPossibleAxis(data)];
 
           break;
@@ -2375,7 +2376,8 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
           break;
 
         default:
-          possibleMoves.push.apply(possibleMoves, _toConsumableArray(this.checkDiagonal(tileData))); // let pawnPositions = [];
+          possibleMoves.push.apply(possibleMoves, _toConsumableArray(this.checkDiagonal(tileData)));
+          possibleMoves.push.apply(possibleMoves, _toConsumableArray(this.checkAxis(tileData))); // let pawnPositions = [];
           // if (this.state.youArePlayer === 0) {
           //     if (this.state.gameState.board[data.position.y - 1][data.position.x].piece === 'empty') {
           //         pawnPositions.push({y: data.position.y - 1, x: data.position.x});
@@ -2503,6 +2505,16 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       }
 
       return possibleMoves;
+    },
+    checkAxis: function checkAxis(tileData) {
+      var possibleMoves = [];
+      var position = tileData.position;
+
+      for (var i = position.x; i >= 0; i--) {
+        console.log('X-: ', this.game.board[position.y][i].position);
+
+        if (this.game.board[position.y][i]) {}
+      }
     },
     emptyPossibleMoves: function emptyPossibleMoves() {
       this.possibleMoves = [];
