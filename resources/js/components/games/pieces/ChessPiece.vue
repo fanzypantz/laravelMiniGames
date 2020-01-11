@@ -13,6 +13,9 @@
             @dragstart="(e) => handleDragStart(e, tileData)"
         >
         <p class="tile-number">{{tileData.position.x}}-{{tileData.position.y}}</p>
+        <p class="tile-number" v-bind:style="{
+            top: '2%'
+        }">{{canDrag}}</p>
     </div>
 
 </template>
@@ -42,13 +45,18 @@
             },
 
             handleDrop(e, tileData) {
+                e.preventDefault();
                 console.log('dropData: ', tileData);
-                let payloadData = JSON.parse(e.dataTransfer.getData('text'));
-                console.log('payloadData: ', payloadData);
+                let oldPiece = JSON.parse(e.dataTransfer.getData('text'));
+                console.log('payloadData: ', oldPiece);
 
                 // If this tile has been marked as a possible target continue the logic
                 if (this.possibleTarget) {
                     console.log('could drop here: ', );
+                    this.$emit('sendGameMove', {
+                        oldPiece: oldPiece,
+                        newPiece: this.tileData,
+                    });
                 }
 
                 this.removeHighlight();

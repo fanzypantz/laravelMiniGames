@@ -1,15 +1,16 @@
 <template>
-    <div v-if="game !== null && game.board" class="board chess">
-        <div class="row" v-for="row in game.board">
+    <div v-if="board !== null" class="board chess">
+        <div class="row" v-for="row in board">
             <chess-piece
                 class="tile"
                 v-for="(tile, index) in row"
                 v-bind:key="index"
                 v-bind:tile-data="tile"
-                v-bind:can-drag="getDragPermission()"
+                v-bind:can-drag="getDragPermission(tile)"
                 v-bind:possibleTarget="checkInPossibleMoves(tile)"
                 @checkPossibleMoves="checkPossibleMoves"
                 @emptyPossibleMoves="emptyPossibleMoves"
+                @sendGameMove="sendGameMove"
             />
         </div>
     </div>
@@ -22,7 +23,8 @@
     export default {
         data() {
             return {
-                game: null,
+                board: null,
+                turn: null,
                 possibleMoves: [],
             }
         },
@@ -69,8 +71,8 @@
                 return board;
             },
 
-            getDragPermission() {
-                return this.game.turn === this.user.id;
+            getDragPermission(tile) {
+                return this.turn === this.user.id && tile.type !== 'empty';
             },
 
             convertNumber (number)  {
@@ -88,32 +90,41 @@
             */
 
             startGame() {
-                let game = {};
-                game.board = this.initiateBoard();
-                game.turn = this.user.id;
-
-                this.game = game;
+                this.board = this.initiateBoard();
+                this.turn = this.user.id;
             },
 
             restartGame() {
                 window.axios.post(`/game/restartGame/${this.lobby.url}`);
-                this.game = null;
+                this.board = null;
                 this.addGameMessage(`The game has been reset!`);
             },
 
             playerWon(player) {
                 console.log('player: ', player.playerNumber, ' won the game!');
-                this.game.victory = player;
+                this.victory = player;
             },
 
-            sendGameMove(roll){
+            sendGameMove(gameMove){
+                console.log('sending: ', gameMove);
                 window.axios.post(`/game/gameMove/${this.lobby.url}`, {
-                    move: roll,
+                    move: gameMove,
                 });
+                this.doGameMove(gameMove);
             },
 
-            doGameMove(roll) {
+            doGameMove(gameMove) {
+                let gameMoveData =  JSON.parse(JSON.stringify(gameMove));
+                let oldPiece = gameMoveData.oldPiece;
+                let newPiece = gameMoveData.newPiece;
 
+                Vue.set(this.board[oldPiece.position.y], oldPiece.position.x, {
+                    "type": "empty",
+                    "position": oldPiece.position,
+                });
+
+                oldPiece.position = newPiece.position;
+                Vue.set(this.board[newPiece.position.y], newPiece.position.x, oldPiece);
             },
 
             /*
@@ -124,8 +135,10 @@
                 return this.possibleMoves.filter(move => (move.x === tileData.position.x && move.y === tileData.position.y)).length > 0;
             },
 
-            checkPossibleMoves(tileData) {
+            async checkPossibleMoves(tileData) {
                 let possibleMoves = [];
+                let diagonalMoves = [];
+                let axisMoves = [];
                 console.log('tileData: ', tileData);
 
                 switch (tileData.type) {
@@ -146,24 +159,34 @@
                                 continue
                             }
                             if (
-                                this.game.board[knightPositions[i].y][knightPositions[i].x].colour !== tileData.colour ||
-                                this.game.board[knightPositions[i].y][knightPositions[i].x].type === "empty"
+                                this.board[knightPositions[i].y][knightPositions[i].x].colour !== tileData.colour ||
+                                this.board[knightPositions[i].y][knightPositions[i].x].type === "empty"
                             ) {
                                 possibleMoves.push(knightPositions[i]);
                             }
                         }
                         break;
                     case "queen":
-                        possibleMoves.push(...this.checkDiagonal(tileData));
-                        possibleMoves.push(...this.checkAxis(tileData));
-                    //     possibleMoves = [...possibleMoves, ...this.checkPossibleDiagonal(data)];
-                    //     possibleMoves = [...possibleMoves, ...this.checkPossibleAxis(data)];
+                        diagonalMoves = await this.checkDiagonal(tileData);
+                        axisMoves = await this.checkAxis(tileData);
+                        if (diagonalMoves.length > 0) {
+                            possibleMoves.push(...diagonalMoves);
+                        }
+                        if (axisMoves.length > 0) {
+                            possibleMoves.push(...axisMoves);
+                        }
                         break;
                     case "rook":
-                        // possibleMoves = [...possibleMoves, ...this.checkPossibleAxis(data)];
+                        axisMoves = await this.checkAxis(tileData);
+                        if (axisMoves.length > 0) {
+                            possibleMoves.push(...axisMoves);
+                        }
                         break;
                     case "bishop":
-                        // possibleMoves = [...possibleMoves, ...this.checkPossibleDiagonal(data)];
+                        diagonalMoves = await this.checkDiagonal(tileData);
+                        if (diagonalMoves.length > 0) {
+                            possibleMoves.push(...diagonalMoves);
+                        }
                         break;
                     case "king":
                         // let kingPositions = [
@@ -186,8 +209,14 @@
                         // }
                         break;
                     default:
-                        possibleMoves.push(...this.checkDiagonal(tileData));
-                        possibleMoves.push(...this.checkAxis(tileData));
+                        diagonalMoves = await this.checkDiagonal(tileData);
+                        axisMoves = await this.checkAxis(tileData);
+                        if (diagonalMoves.length > 0) {
+                            possibleMoves.push(...diagonalMoves);
+                        }
+                        if (axisMoves.length > 0) {
+                            possibleMoves.push(...axisMoves);
+                        }
                         // let pawnPositions = [];
                         // if (this.state.youArePlayer === 0) {
                         //     if (this.state.gameState.board[data.position.y - 1][data.position.x].piece === 'empty') {
@@ -239,33 +268,34 @@
             },
 
             checkDiagonal(tileData) {
-                let possibleMoves = [];
-                let edgePositions = [
-                    {
-                        x: this.convertNumber(tileData.position.x - tileData.position.y),
-                        y: this.convertNumber(tileData.position.y - tileData.position.x)
-                    },
-                    {
-                        x: this.convertNumber(tileData.position.x + tileData.position.y),
-                        y: this.convertNumber(tileData.position.x - (7 - tileData.position.y))
-                    },
-                    {
-                        x: this.convertNumber((tileData.position.x + (7 - tileData.position.y))),
-                        y: this.convertNumber(tileData.position.y + (7 - tileData.position.x))
-                    },
-                    {
-                        x: this.convertNumber((tileData.position.x + tileData.position.y) - 7),
-                        y: this.convertNumber(tileData.position.x + tileData.position.y)
-                    },
-                ];
+                return new Promise ((resolve) => {
+                    let possibleMoves = [];
+                    let edgePositions = [
+                        {
+                            x: this.convertNumber(tileData.position.x - tileData.position.y),
+                            y: this.convertNumber(tileData.position.y - tileData.position.x)
+                        },
+                        {
+                            x: this.convertNumber(tileData.position.x + tileData.position.y),
+                            y: this.convertNumber(tileData.position.x - (7 - tileData.position.y))
+                        },
+                        {
+                            x: this.convertNumber((tileData.position.x + (7 - tileData.position.y))),
+                            y: this.convertNumber(tileData.position.y + (7 - tileData.position.x))
+                        },
+                        {
+                            x: this.convertNumber((tileData.position.x + tileData.position.y) - 7),
+                            y: this.convertNumber(tileData.position.x + tileData.position.y)
+                        },
+                    ];
 
-                for (let i = 0; i < edgePositions.length; i++) {
-                    let angle = Math.atan2(edgePositions[i].y - tileData.position.y, edgePositions[i].x - tileData.position.x) * 180 / Math.PI;
-                    let distance = Math.floor(Math.sqrt( Math.pow((tileData.position.x - edgePositions[i].x), 2) + Math.pow((tileData.position.y - edgePositions[i].y), 2)));
-                    possibleMoves.push(...this.checkDiagonalJump(angle, distance, tileData));
-                }
-                console.log('possibleMoves: ', possibleMoves );
-                return possibleMoves;
+                    for (let i = 0; i < edgePositions.length; i++) {
+                        let angle = Math.atan2(edgePositions[i].y - tileData.position.y, edgePositions[i].x - tileData.position.x) * 180 / Math.PI;
+                        let distance = Math.floor(Math.sqrt( Math.pow((tileData.position.x - edgePositions[i].x), 2) + Math.pow((tileData.position.y - edgePositions[i].y), 2)));
+                        possibleMoves.push(...this.checkDiagonalJump(angle, distance, tileData));
+                    }
+                    resolve(possibleMoves);
+                });
             },
 
             checkDiagonalJump(angle, distance, tileData) {
@@ -295,8 +325,8 @@
                             break;
                     }
                     if (x <= 7 && x >= 0 && y <= 7 && y >= 0) {
-                        if (this.game.board[y][x].type !== "empty") {
-                            if (this.game.board[y][x].colour !== tileData.colour) {
+                        if (this.board[y][x].type !== "empty") {
+                            if (this.board[y][x].colour !== tileData.colour) {
                                 possibleMoves.push({y: y, x: x})
                             }
                             return possibleMoves;
@@ -311,15 +341,57 @@
             },
 
             checkAxis(tileData) {
-                let possibleMoves = [];
-                let position = tileData.position;
+                return new Promise ((resolve) => {
+                    let possibleMoves = [];
+                    let position = tileData.position;
 
-                for (let i = position.x; i >= 0; i--) {
-                    console.log('X-: ', this.game.board[position.y][i].position);
-                    if (this.game.board[position.y][i]) {
-
+                    for (let i = position.x - 1; i >= 0; i--) {
+                        let tile = this.board[position.y][i];
+                        if (tile.type !== 'empty') {
+                            if (tile.colour !== tileData.colour) {
+                                possibleMoves.push(tile.position);
+                            }
+                            break;
+                        } else {
+                            possibleMoves.push(tile.position);
+                        }
                     }
-                }
+                    for (let i = position.x + 1; i <= 7; i++) {
+                        let tile = this.board[position.y][i];
+                        if (tile.type !== 'empty') {
+                            if (tile.colour !== tileData.colour) {
+                                possibleMoves.push(tile.position);
+                            }
+                            break;
+                        } else {
+                            possibleMoves.push(tile.position);
+                        }
+                    }
+                    for (let i = position.y - 1; i >= 0; i--) {
+                        let tile = this.board[i][position.x];
+                        if (tile.type !== 'empty') {
+                            if (tile.colour !== tileData.colour) {
+                                possibleMoves.push(tile.position);
+                            }
+                            break;
+                        } else {
+                            possibleMoves.push(tile.position);
+                        }
+                    }
+                    for (let i = position.y + 1; i <= 7; i++) {
+                        let tile = this.board[i][position.x];
+                        if (tile.type !== 'empty') {
+                            if (tile.colour !== tileData.colour) {
+                                possibleMoves.push(tile.position);
+                            }
+                            break;
+                        } else {
+                            possibleMoves.push(tile.position);
+                        }
+                    }
+                    resolve(possibleMoves);
+                });
+
 
             },
 
@@ -357,11 +429,10 @@
                 })
                 .listen('RestartGameEvent', (event) => {
                     console.log('restarting game');
-                    this.game = null;
+                    this.board = null;
                     this.addGameMessage(`The game has been reset!`);
                 })
                 .listen('GameMoveEvent', (event) => {
-                    console.log('new game move: ', event);
                     this.doGameMove(event.move);
                 }).listen('GameMessageEvent', (event) => {
                     console.log('new game message: ', event.message);
