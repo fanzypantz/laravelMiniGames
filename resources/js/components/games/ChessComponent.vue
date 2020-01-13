@@ -278,7 +278,7 @@
                         break;
                     default:
                         let pawnPositions = [];
-                        // if (this.state.youArePlayer === 0) {
+                        if (this.player1 === this.user.id) {
                             if (this.board[tileData.position.y - 1][tileData.position.x].type === 'empty') {
                                 pawnPositions.push({y: tileData.position.y - 1, x: tileData.position.x});
                             }
@@ -295,25 +295,26 @@
                             if (tileData.isInInitialState && this.board[tileData.position.y - 2][tileData.position.x].type === 'empty') {
                                 pawnPositions.push({y: tileData.position.y - 2, x: tileData.position.x });
                             }
-                        // }
-                        // else {
-                        //     if (this.board[data.position.y + 1][data.position.x].type === 'empty') {
-                        //         pawnPositions.push({y: data.position.y + 1, x: data.position.x});
-                        //     }
-                        //     if (this.board[data.position.y + 1][data.position.x + 1] !== undefined) {
-                        //         if (this.board[data.position.y + 1][data.position.x + 1].colour === 'white') {
-                        //             pawnPositions.push({y: data.position.y + 1, x: data.position.x + 1});
-                        //         }
-                        //     }
-                        //     if (this.board[data.position.y + 1][data.position.x - 1] !== undefined) {
-                        //         if (this.board[data.position.y + 1][data.position.x - 1].colour === 'white') {
-                        //             pawnPositions.push({y: data.position.y + 1, x: data.position.x - 1});
-                        //         }
-                        //     }
-                        //     if (data.isInInitialState && this.board[data.position.y + 2][data.position.x].type === 'empty') {
-                        //         pawnPositions.push({y: data.position.y + 2, x: data.position.x });
-                        //     }
-                        // }
+                        }
+                        else {
+                            if (this.board[tileData.position.y + 1][tileData.position.x].type === 'empty') {
+                                pawnPositions.push({y: tileData.position.y + 1, x: tileData.position.x});
+                            }
+                            if (this.board[tileData.position.y + 1][tileData.position.x + 1] !== undefined) {
+                                if (this.board[tileData.position.y + 1][tileData.position.x + 1].colour === 'white') {
+                                    pawnPositions.push({y: tileData.position.y + 1, x: tileData.position.x + 1});
+                                }
+                            }
+                            if (this.board[tileData.position.y + 1][tileData.position.x - 1] !== undefined) {
+                                if (this.board[tileData.position.y + 1][tileData.position.x - 1].colour === 'white') {
+                                    pawnPositions.push({y: tileData.position.y + 1, x: tileData.position.x - 1});
+                                }
+                            }
+                            if (tileData.isInInitialState && this.board[tileData.position.y + 2][tileData.position.x].type === 'empty') {
+                                pawnPositions.push({y: tileData.position.y + 2, x: tileData.position.x });
+                            }
+                        }
+
                         for (let i = 0; i < pawnPositions.length; i++) {
                             if (pawnPositions[i].y < 0 || pawnPositions[i].x < 0 || pawnPositions[i].y > 7 || pawnPositions[i].x > 7) {
                                 continue
@@ -472,12 +473,12 @@
 
         mounted() {
             console.log('Chess Component mounted.');
+            this.checkGameState();
 
             // Bind the mouse up to emptying possible moves, if the user tries to drop outside of the board.
             window.addEventListener('dragend', this.emptyPossibleMoves);
 
-            this.checkGameState();
-
+            // Socket broadcasting listening events
             Echo.join('game.' + this.lobby.url)
                 .listen('StartGameEvent', (event) => {
                     console.log('new game: ', event.game);

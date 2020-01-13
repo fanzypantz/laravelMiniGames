@@ -2462,7 +2462,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
               break;
 
             case 16:
-              return _context.abrupt("break", 60);
+              return _context.abrupt("break", 57);
 
             case 17:
               _context.next = 19;
@@ -2484,7 +2484,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(axisMoves));
               }
 
-              return _context.abrupt("break", 60);
+              return _context.abrupt("break", 57);
 
             case 26:
               _context.next = 28;
@@ -2497,7 +2497,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(axisMoves));
               }
 
-              return _context.abrupt("break", 60);
+              return _context.abrupt("break", 57);
 
             case 31:
               _context.next = 33;
@@ -2510,7 +2510,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(diagonalMoves));
               }
 
-              return _context.abrupt("break", 60);
+              return _context.abrupt("break", 57);
 
             case 36:
               kingPositions = [{
@@ -2564,94 +2564,109 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
               break;
 
             case 45:
-              return _context.abrupt("break", 60);
+              return _context.abrupt("break", 57);
 
             case 46:
-              pawnPositions = []; // if (this.state.youArePlayer === 0) {
+              pawnPositions = [];
 
-              if (this.board[tileData.position.y - 1][tileData.position.x].type === 'empty') {
-                pawnPositions.push({
-                  y: tileData.position.y - 1,
-                  x: tileData.position.x
-                });
-              }
-
-              if (this.board[tileData.position.y - 1][tileData.position.x + 1] !== undefined) {
-                if (this.board[tileData.position.y - 1][tileData.position.x + 1].colour === 'black') {
+              if (this.player1 === this.user.id) {
+                if (this.board[tileData.position.y - 1][tileData.position.x].type === 'empty') {
                   pawnPositions.push({
                     y: tileData.position.y - 1,
-                    x: tileData.position.x + 1
+                    x: tileData.position.x
+                  });
+                }
+
+                if (this.board[tileData.position.y - 1][tileData.position.x + 1] !== undefined) {
+                  if (this.board[tileData.position.y - 1][tileData.position.x + 1].colour === 'black') {
+                    pawnPositions.push({
+                      y: tileData.position.y - 1,
+                      x: tileData.position.x + 1
+                    });
+                  }
+                }
+
+                if (this.board[tileData.position.y - 1][tileData.position.x - 1] !== undefined) {
+                  if (this.board[tileData.position.y - 1][tileData.position.x - 1].colour === 'black') {
+                    pawnPositions.push({
+                      y: tileData.position.y - 1,
+                      x: tileData.position.x - 1
+                    });
+                  }
+                }
+
+                if (tileData.isInInitialState && this.board[tileData.position.y - 2][tileData.position.x].type === 'empty') {
+                  pawnPositions.push({
+                    y: tileData.position.y - 2,
+                    x: tileData.position.x
+                  });
+                }
+              } else {
+                if (this.board[tileData.position.y + 1][tileData.position.x].type === 'empty') {
+                  pawnPositions.push({
+                    y: tileData.position.y + 1,
+                    x: tileData.position.x
+                  });
+                }
+
+                if (this.board[tileData.position.y + 1][tileData.position.x + 1] !== undefined) {
+                  if (this.board[tileData.position.y + 1][tileData.position.x + 1].colour === 'white') {
+                    pawnPositions.push({
+                      y: tileData.position.y + 1,
+                      x: tileData.position.x + 1
+                    });
+                  }
+                }
+
+                if (this.board[tileData.position.y + 1][tileData.position.x - 1] !== undefined) {
+                  if (this.board[tileData.position.y + 1][tileData.position.x - 1].colour === 'white') {
+                    pawnPositions.push({
+                      y: tileData.position.y + 1,
+                      x: tileData.position.x - 1
+                    });
+                  }
+                }
+
+                if (tileData.isInInitialState && this.board[tileData.position.y + 2][tileData.position.x].type === 'empty') {
+                  pawnPositions.push({
+                    y: tileData.position.y + 2,
+                    x: tileData.position.x
                   });
                 }
               }
-
-              if (this.board[tileData.position.y - 1][tileData.position.x - 1] !== undefined) {
-                if (this.board[tileData.position.y - 1][tileData.position.x - 1].colour === 'black') {
-                  pawnPositions.push({
-                    y: tileData.position.y - 1,
-                    x: tileData.position.x - 1
-                  });
-                }
-              }
-
-              if (tileData.isInInitialState && this.board[tileData.position.y - 2][tileData.position.x].type === 'empty') {
-                pawnPositions.push({
-                  y: tileData.position.y - 2,
-                  x: tileData.position.x
-                });
-              } // }
-              // else {
-              //     if (this.board[data.position.y + 1][data.position.x].type === 'empty') {
-              //         pawnPositions.push({y: data.position.y + 1, x: data.position.x});
-              //     }
-              //     if (this.board[data.position.y + 1][data.position.x + 1] !== undefined) {
-              //         if (this.board[data.position.y + 1][data.position.x + 1].colour === 'white') {
-              //             pawnPositions.push({y: data.position.y + 1, x: data.position.x + 1});
-              //         }
-              //     }
-              //     if (this.board[data.position.y + 1][data.position.x - 1] !== undefined) {
-              //         if (this.board[data.position.y + 1][data.position.x - 1].colour === 'white') {
-              //             pawnPositions.push({y: data.position.y + 1, x: data.position.x - 1});
-              //         }
-              //     }
-              //     if (data.isInInitialState && this.board[data.position.y + 2][data.position.x].type === 'empty') {
-              //         pawnPositions.push({y: data.position.y + 2, x: data.position.x });
-              //     }
-              // }
-
 
               _i2 = 0;
 
-            case 52:
+            case 49:
               if (!(_i2 < pawnPositions.length)) {
-                _context.next = 59;
+                _context.next = 56;
                 break;
               }
 
               if (!(pawnPositions[_i2].y < 0 || pawnPositions[_i2].x < 0 || pawnPositions[_i2].y > 7 || pawnPositions[_i2].x > 7)) {
-                _context.next = 55;
+                _context.next = 52;
                 break;
               }
 
-              return _context.abrupt("continue", 56);
+              return _context.abrupt("continue", 53);
 
-            case 55:
+            case 52:
               if (this.board[pawnPositions[_i2].y][pawnPositions[_i2].x].colour !== tileData.colour) {
                 possibleMoves.push(pawnPositions[_i2]);
               }
 
-            case 56:
+            case 53:
               _i2++;
-              _context.next = 52;
+              _context.next = 49;
               break;
 
-            case 59:
-              return _context.abrupt("break", 60);
+            case 56:
+              return _context.abrupt("break", 57);
 
-            case 60:
+            case 57:
               this.possibleMoves = possibleMoves;
 
-            case 61:
+            case 58:
             case "end":
               return _context.stop();
           }
@@ -2820,10 +2835,11 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
   mounted: function mounted() {
     var _this7 = this;
 
-    console.log('Chess Component mounted.'); // Bind the mouse up to emptying possible moves, if the user tries to drop outside of the board.
+    console.log('Chess Component mounted.');
+    this.checkGameState(); // Bind the mouse up to emptying possible moves, if the user tries to drop outside of the board.
 
-    window.addEventListener('dragend', this.emptyPossibleMoves);
-    this.checkGameState();
+    window.addEventListener('dragend', this.emptyPossibleMoves); // Socket broadcasting listening events
+
     Echo.join('game.' + this.lobby.url).listen('StartGameEvent', function (event) {
       console.log('new game: ', event.game);
       _this7.board = event.game.board;
