@@ -5,17 +5,17 @@
         @drop="(e) => handleDrop(e, tileData)"
     >
         <img
-            v-bind:class="[tileData.colour === 'white' ? 'white-piece' : '' , 'piece-icon']"
+            v-bind:class="classType()"
             v-if="tileData !== null && tileData.type !== 'empty'"
             v-bind:draggable="canDrag"
             :src="getPieceImage(tileData.type)"
             alt=""
             @dragstart="(e) => handleDragStart(e, tileData)"
         >
-        <p class="tile-number">{{tileData.position.x}}-{{tileData.position.y}}</p>
-        <p class="tile-number" v-bind:style="{
-            top: '2%'
-        }">{{canDrag}}</p>
+<!--        <p class="tile-number">{{tileData.position.x}}-{{tileData.position.y}}</p>-->
+<!--        <p class="tile-number" v-bind:style="{-->
+<!--            top: '2%'-->
+<!--        }">{{canDrag}}</p>-->
     </div>
 
 </template>
@@ -39,12 +39,16 @@
 
             classType() {
                 let className = '';
-                if (this.isPlayer1 && this.tileData.colour === 'white') {
-                    className += 'white-piece';
-                } else if (!this.isPlayer1 && this.tileData.colour === 'black') {
-                    className += 'white-piece';
+                if (this.tileData.colour === 'white') {
+                    className += 'white-piece '
                 }
-                className += ' piece-icon';
+                if (this.isPlayer1 && this.tileData.colour === 'white' && !this.canDrag) {
+                    className += 'grey-piece ';
+                }
+                if (!this.isPlayer1 && this.tileData.colour === 'black' && !this.canDrag) {
+                    className += 'grey-piece ';
+                }
+                className += 'piece-icon ';
                 return className;
             },
 

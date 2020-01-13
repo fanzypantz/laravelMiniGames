@@ -782,7 +782,7 @@ nav .nav-item:hover {
   position: relative;
   width: calc(100%/10);
   height: calc(100%/10);
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(7, 15, 35, 0.8);
   box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.5);
 }
 
@@ -801,7 +801,7 @@ nav .nav-item:hover {
 }
 
 .board .oddRow:nth-of-type(odd) {
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(7, 15, 35, 0.8);
 }
 
 .board .oddRow:nth-of-type(even) {
@@ -1076,15 +1076,17 @@ nav .nav-item:hover {
 }
 
 .chess .row:nth-child(odd) .tile:nth-child(odd) {
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(7, 15, 35, 0.8);
 }
 
 .chess .row:nth-child(even) .tile:nth-child(even) {
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(7, 15, 35, 0.8);
 }
 
 .chess .piece-icon {
   width: 90%;
+  -webkit-transition: opacity 250ms ease;
+  transition: opacity 250ms ease;
 }
 
 .chess .possible-target {
@@ -1098,6 +1100,10 @@ nav .nav-item:hover {
 .white-piece {
   -webkit-filter: invert(1);
           filter: invert(1);
+}
+
+.grey-piece {
+  opacity: 0.5;
 }
 
 .player2 {

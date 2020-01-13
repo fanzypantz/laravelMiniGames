@@ -180,6 +180,12 @@
                     }
                     Vue.set(this.board[newPiece.position.y], newPiece.position.x, oldPiece);
 
+
+
+                    // ANIMATIONS HERE
+
+                    this.checkKing(newPiece.type, this.turn);
+
                     if (this.turn === this.user.id) {
                         let opponent = this.getOpponentUser();
                         console.log('opponent turn: ', opponent);
@@ -188,11 +194,19 @@
                         console.log('my turn: ', );
                         this.turn = this.user.id;
                     }
-
-                    // ANIMATIONS HERE
                     resolve(true);
 
                 });
+            },
+
+            checkKing(target, attacker) {
+                if (target === 'king') {
+                    this.handleWin(attacker);
+                }
+            },
+
+            handleWin(attacker){
+            
             },
 
             /*

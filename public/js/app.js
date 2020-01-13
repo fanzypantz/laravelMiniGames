@@ -2370,7 +2370,9 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
           oldPiece.isInInitialState = false;
         }
 
-        Vue.set(_this4.board[newPiece.position.y], newPiece.position.x, oldPiece);
+        Vue.set(_this4.board[newPiece.position.y], newPiece.position.x, oldPiece); // ANIMATIONS HERE
+
+        _this4.checkKing(newPiece.type, _this4.turn);
 
         if (_this4.turn === _this4.user.id) {
           var opponent = _this4.getOpponentUser();
@@ -2380,12 +2382,17 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         } else {
           console.log('my turn: ');
           _this4.turn = _this4.user.id;
-        } // ANIMATIONS HERE
-
+        }
 
         resolve(true);
       });
     },
+    checkKing: function checkKing(target, attacker) {
+      if (target === 'king') {
+        this.handleWin(attacker);
+      }
+    },
+    handleWin: function handleWin(attacker) {},
 
     /*
         Check possible game moves
@@ -3657,13 +3664,19 @@ __webpack_require__.r(__webpack_exports__);
     classType: function classType() {
       var className = '';
 
-      if (this.isPlayer1 && this.tileData.colour === 'white') {
-        className += 'white-piece';
-      } else if (!this.isPlayer1 && this.tileData.colour === 'black') {
-        className += 'white-piece';
+      if (this.tileData.colour === 'white') {
+        className += 'white-piece ';
       }
 
-      className += ' piece-icon';
+      if (this.isPlayer1 && this.tileData.colour === 'white' && !this.canDrag) {
+        className += 'grey-piece ';
+      }
+
+      if (!this.isPlayer1 && this.tileData.colour === 'black' && !this.canDrag) {
+        className += 'grey-piece ';
+      }
+
+      className += 'piece-icon ';
       return className;
     },
     getPieceImage: function getPieceImage(name) {
@@ -47381,10 +47394,7 @@ var render = function() {
     [
       _vm.tileData !== null && _vm.tileData.type !== "empty"
         ? _c("img", {
-            class: [
-              _vm.tileData.colour === "white" ? "white-piece" : "",
-              "piece-icon"
-            ],
+            class: _vm.classType(),
             attrs: {
               draggable: _vm.canDrag,
               src: _vm.getPieceImage(_vm.tileData.type),
@@ -47396,26 +47406,7 @@ var render = function() {
               }
             }
           })
-        : _vm._e(),
-      _vm._v(" "),
-      _c("p", { staticClass: "tile-number" }, [
-        _vm._v(
-          _vm._s(_vm.tileData.position.x) +
-            "-" +
-            _vm._s(_vm.tileData.position.y)
-        )
-      ]),
-      _vm._v(" "),
-      _c(
-        "p",
-        {
-          staticClass: "tile-number",
-          style: {
-            top: "2%"
-          }
-        },
-        [_vm._v(_vm._s(_vm.canDrag))]
-      )
+        : _vm._e()
     ]
   )
 }
