@@ -32,9 +32,21 @@
             tileData: null,
             canDrag: false,
             possibleTarget: false,
+            isPlayer1: false,
         },
 
         methods: {
+
+            classType() {
+                let className = '';
+                if (this.isPlayer1 && this.tileData.colour === 'white') {
+                    className += 'white-piece';
+                } else if (!this.isPlayer1 && this.tileData.colour === 'black') {
+                    className += 'white-piece';
+                }
+                className += ' piece-icon';
+                return className;
+            },
 
             getPieceImage(name) {
                 if (name) {
@@ -63,9 +75,13 @@
             },
 
             handleDragStart(e, tileData) {
-                console.log('dragStart: ', tileData);
-                e.dataTransfer.setData('text/plain', JSON.stringify(tileData));
-                this.highlightMoves(tileData);
+                if (this.canDrag) {
+                    console.log('dragStart: ', tileData);
+                    e.dataTransfer.setData('text/plain', JSON.stringify(tileData));
+                    this.highlightMoves(tileData);
+                } else {
+                    e.preventDefault();
+                }
             },
 
             highlightMoves(tileData) {

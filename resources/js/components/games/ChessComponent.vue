@@ -1,19 +1,30 @@
 <template>
-    <div v-if="board !== null" class="board chess">
-        <div class="row" v-for="row in board">
-            <chess-piece
-                class="tile"
-                v-for="(tile, index) in row"
-                v-bind:key="index"
-                v-bind:tile-data="tile"
-                v-bind:can-drag="getDragPermission(tile)"
-                v-bind:possibleTarget="checkInPossibleMoves(tile)"
-                @checkPossibleMoves="checkPossibleMoves"
-                @emptyPossibleMoves="emptyPossibleMoves"
-                @sendGameMove="sendGameMove"
-            />
+    <div class="game">
+
+        <!--GAME-->
+        <div v-if="board !== null" v-bind:class="['board', 'chess', this.player1 !== this.user.id ? 'player2' : '' , ]">
+            <div class="row" v-for="row in board">
+                <chess-piece
+                    class="tile"
+                    v-for="(tile, index) in row"
+                    v-bind:key="index"
+                    v-bind:tile-data="tile"
+                    v-bind:can-drag="getDragPermission(tile)"
+                    v-bind:possibleTarget="checkInPossibleMoves(tile)"
+                    v-bind:isPlayer1="player1 === user.id"
+                    @checkPossibleMoves="checkPossibleMoves"
+                    @emptyPossibleMoves="emptyPossibleMoves"
+                    @sendGameMove="sendGameMove"
+                />
+            </div>
+        </div>
+
+        <!--Buttons-->
+        <div v-if="board === null" class="buttons">
+            <button @click="initiateGame()">Start Game</button>
         </div>
     </div>
+
 </template>
 
 <script>
@@ -25,6 +36,7 @@
             return {
                 board: null,
                 turn: null,
+                player1: null,
                 possibleMoves: [],
             }
         },
@@ -71,8 +83,13 @@
                 return board;
             },
 
+
             getDragPermission(tile) {
-                return this.turn === this.user.id && tile.type !== 'empty';
+                return (this.turn === this.user.id && tile.type !== 'empty') &&
+                    (
+                        (tile.colour === 'white' && this.player1 === this.user.id) ||
+                        (tile.colour === 'black' && this.player1 !== this.user.id)
+                    )
             },
 
             convertNumber (number)  {
@@ -85,13 +102,39 @@
                 }
             },
 
+            getOpponentUser() {
+                return this.connectedPlayers.find(e => e.id !== this.user.id);
+            },
+
             /*
                 Game control logic
             */
 
+            checkGameState() {
+                let gameState = JSON.parse(this.lobby.gameState);
+                if (gameState !== null) {
+                    this.board = gameState.board;
+                    this.turn = gameState.turn;
+                    this.player1 = gameState.player1
+                }
+            },
+
+            initiateGame() {
+                window.axios.post(`/game/startGame/${this.lobby.url}`, {
+                    game: this.startGame(),
+                });
+                this.addGameMessage(`The game has started!`)
+            },
+
             startGame() {
                 this.board = this.initiateBoard();
                 this.turn = this.user.id;
+                this.player1 = this.user.id;
+                return {
+                    board: this.board,
+                    turn: this.turn,
+                    player1: this.player1
+                }
             },
 
             restartGame() {
@@ -107,24 +150,49 @@
 
             sendGameMove(gameMove){
                 console.log('sending: ', gameMove);
-                window.axios.post(`/game/gameMove/${this.lobby.url}`, {
-                    move: gameMove,
+                this.doGameMove(gameMove).then(() => {
+                    window.axios.post(`/game/gameMove/${this.lobby.url}`, {
+                        move: gameMove,
+                        gameState: {
+                            board: this.board,
+                            turn: this.turn,
+                            player1: this.player1
+                        }
+                    });
                 });
-                this.doGameMove(gameMove);
             },
 
             doGameMove(gameMove) {
-                let gameMoveData =  JSON.parse(JSON.stringify(gameMove));
-                let oldPiece = gameMoveData.oldPiece;
-                let newPiece = gameMoveData.newPiece;
+                return new Promise (resolve => {
+                    let gameMoveData =  JSON.parse(JSON.stringify(gameMove));
+                    console.log('gameMoveData: ', gameMoveData);
+                    let oldPiece = gameMoveData.oldPiece;
+                    let newPiece = gameMoveData.newPiece;
 
-                Vue.set(this.board[oldPiece.position.y], oldPiece.position.x, {
-                    "type": "empty",
-                    "position": oldPiece.position,
+                    Vue.set(this.board[oldPiece.position.y], oldPiece.position.x, {
+                        "type": "empty",
+                        "position": oldPiece.position,
+                    });
+
+                    oldPiece.position = newPiece.position;
+                    if (oldPiece.type === 'pawn' && oldPiece.isInInitialState) {
+                        oldPiece.isInInitialState = false;
+                    }
+                    Vue.set(this.board[newPiece.position.y], newPiece.position.x, oldPiece);
+
+                    if (this.turn === this.user.id) {
+                        let opponent = this.getOpponentUser();
+                        console.log('opponent turn: ', opponent);
+                        this.turn = opponent.id;
+                    } else {
+                        console.log('my turn: ', );
+                        this.turn = this.user.id;
+                    }
+
+                    // ANIMATIONS HERE
+                    resolve(true);
+
                 });
-
-                oldPiece.position = newPiece.position;
-                Vue.set(this.board[newPiece.position.y], newPiece.position.x, oldPiece);
             },
 
             /*
@@ -189,78 +257,71 @@
                         }
                         break;
                     case "king":
-                        // let kingPositions = [
-                        //     {y: data.position.y - 1, x: data.position.x - 1},
-                        //     {y: data.position.y - 1, x: data.position.x},
-                        //     {y: data.position.y - 1, x: data.position.x + 1},
-                        //     {y: data.position.y, x: data.position.x + 1},
-                        //     {y: data.position.y + 1, x: data.position.x + 1},
-                        //     {y: data.position.y + 1, x: data.position.x},
-                        //     {y: data.position.y + 1, x: data.position.x - 1},
-                        //     {y: data.position.y, x: data.position.x - 1},
-                        // ];
-                        // for (let i = 0; i < kingPositions.length; i++) {
-                        //     if (kingPositions[i].y < 0 || kingPositions[i].x < 0 || kingPositions[i].y > 7 || kingPositions[i].x > 7) {
-                        //         continue
-                        //     }
-                        //     if (this.state.gameState.board[kingPositions[i].y][kingPositions[i].x].colour !== data.color) {
-                        //         possibleMoves.push(kingPositions[i]);
-                        //     }
-                        // }
+                        let kingPositions = [
+                            {y: tileData.position.y - 1, x: tileData.position.x - 1},
+                            {y: tileData.position.y - 1, x: tileData.position.x},
+                            {y: tileData.position.y - 1, x: tileData.position.x + 1},
+                            {y: tileData.position.y, x: tileData.position.x + 1},
+                            {y: tileData.position.y + 1, x: tileData.position.x + 1},
+                            {y: tileData.position.y + 1, x: tileData.position.x},
+                            {y: tileData.position.y + 1, x: tileData.position.x - 1},
+                            {y: tileData.position.y, x: tileData.position.x - 1},
+                        ];
+                        for (let i = 0; i < kingPositions.length; i++) {
+                            if (kingPositions[i].y < 0 || kingPositions[i].x < 0 || kingPositions[i].y > 7 || kingPositions[i].x > 7) {
+                                continue
+                            }
+                            if (this.board[kingPositions[i].y][kingPositions[i].x].colour !== tileData.colour) {
+                                possibleMoves.push(kingPositions[i]);
+                            }
+                        }
                         break;
                     default:
-                        diagonalMoves = await this.checkDiagonal(tileData);
-                        axisMoves = await this.checkAxis(tileData);
-                        if (diagonalMoves.length > 0) {
-                            possibleMoves.push(...diagonalMoves);
-                        }
-                        if (axisMoves.length > 0) {
-                            possibleMoves.push(...axisMoves);
-                        }
-                        // let pawnPositions = [];
+                        let pawnPositions = [];
                         // if (this.state.youArePlayer === 0) {
-                        //     if (this.state.gameState.board[data.position.y - 1][data.position.x].piece === 'empty') {
-                        //         pawnPositions.push({y: data.position.y - 1, x: data.position.x});
-                        //     }
-                        //     if (this.state.gameState.board[data.position.y - 1][data.position.x + 1] !== undefined) {
-                        //         if (this.state.gameState.board[data.position.y - 1][data.position.x + 1].colour === 'black') {
-                        //             pawnPositions.push({y: data.position.y - 1, x: data.position.x + 1});
-                        //         }
-                        //     }
-                        //     if (this.state.gameState.board[data.position.y - 1][data.position.x - 1] !== undefined) {
-                        //         if (this.state.gameState.board[data.position.y - 1][data.position.x - 1].colour === 'black') {
-                        //             pawnPositions.push({y: data.position.y - 1, x: data.position.x - 1});
-                        //         }
-                        //     }
-                        //     if (data.isInInitialState && this.state.gameState.board[data.position.y - 2][data.position.x].piece === 'empty') {
-                        //         pawnPositions.push({y: data.position.y - 2, x: data.position.x });
-                        //     }
-                        // } else {
-                        //     if (this.state.gameState.board[data.position.y + 1][data.position.x].piece === 'empty') {
+                            if (this.board[tileData.position.y - 1][tileData.position.x].type === 'empty') {
+                                pawnPositions.push({y: tileData.position.y - 1, x: tileData.position.x});
+                            }
+                            if (this.board[tileData.position.y - 1][tileData.position.x + 1] !== undefined) {
+                                if (this.board[tileData.position.y - 1][tileData.position.x + 1].colour === 'black') {
+                                    pawnPositions.push({y: tileData.position.y - 1, x: tileData.position.x + 1});
+                                }
+                            }
+                            if (this.board[tileData.position.y - 1][tileData.position.x - 1] !== undefined) {
+                                if (this.board[tileData.position.y - 1][tileData.position.x - 1].colour === 'black') {
+                                    pawnPositions.push({y: tileData.position.y - 1, x: tileData.position.x - 1});
+                                }
+                            }
+                            if (tileData.isInInitialState && this.board[tileData.position.y - 2][tileData.position.x].type === 'empty') {
+                                pawnPositions.push({y: tileData.position.y - 2, x: tileData.position.x });
+                            }
+                        // }
+                        // else {
+                        //     if (this.board[data.position.y + 1][data.position.x].type === 'empty') {
                         //         pawnPositions.push({y: data.position.y + 1, x: data.position.x});
                         //     }
-                        //     if (this.state.gameState.board[data.position.y + 1][data.position.x + 1] !== undefined) {
-                        //         if (this.state.gameState.board[data.position.y + 1][data.position.x + 1].colour === 'white') {
+                        //     if (this.board[data.position.y + 1][data.position.x + 1] !== undefined) {
+                        //         if (this.board[data.position.y + 1][data.position.x + 1].colour === 'white') {
                         //             pawnPositions.push({y: data.position.y + 1, x: data.position.x + 1});
                         //         }
                         //     }
-                        //     if (this.state.gameState.board[data.position.y + 1][data.position.x - 1] !== undefined) {
-                        //         if (this.state.gameState.board[data.position.y + 1][data.position.x - 1].colour === 'white') {
+                        //     if (this.board[data.position.y + 1][data.position.x - 1] !== undefined) {
+                        //         if (this.board[data.position.y + 1][data.position.x - 1].colour === 'white') {
                         //             pawnPositions.push({y: data.position.y + 1, x: data.position.x - 1});
                         //         }
                         //     }
-                        //     if (data.isInInitialState && this.state.gameState.board[data.position.y + 2][data.position.x].piece === 'empty') {
+                        //     if (data.isInInitialState && this.board[data.position.y + 2][data.position.x].type === 'empty') {
                         //         pawnPositions.push({y: data.position.y + 2, x: data.position.x });
                         //     }
                         // }
-                        // for (let i = 0; i < pawnPositions.length; i++) {
-                        //     if (pawnPositions[i].y < 0 || pawnPositions[i].x < 0 || pawnPositions[i].y > 7 || pawnPositions[i].x > 7) {
-                        //         continue
-                        //     }
-                        //     if (this.state.gameState.board[pawnPositions[i].y][pawnPositions[i].x].colour !== data.color) {
-                        //         possibleMoves.push(pawnPositions[i]);
-                        //     }
-                        // }
+                        for (let i = 0; i < pawnPositions.length; i++) {
+                            if (pawnPositions[i].y < 0 || pawnPositions[i].x < 0 || pawnPositions[i].y > 7 || pawnPositions[i].x > 7) {
+                                continue
+                            }
+                            if (this.board[pawnPositions[i].y][pawnPositions[i].x].colour !== tileData.colour) {
+                                possibleMoves.push(pawnPositions[i]);
+                            }
+                        }
                         break;
                 }
 
@@ -404,27 +465,24 @@
             */
 
             addGameMessage(message) {
-                console.log('message: ', message);
-                this.gameMessages.push(message);
-                setTimeout(() => {
-                    this.gameMessages = this.gameMessages.filter(e => e !== message);
-                }, 10000)
+                this.$emit('addGameMessage', message);
             },
 
         },
 
         mounted() {
-            console.log('Game Component mounted.');
+            console.log('Chess Component mounted.');
 
             // Bind the mouse up to emptying possible moves, if the user tries to drop outside of the board.
             window.addEventListener('dragend', this.emptyPossibleMoves);
 
-            this.startGame();
+            this.checkGameState();
 
             Echo.join('game.' + this.lobby.url)
                 .listen('StartGameEvent', (event) => {
                     console.log('new game: ', event.game);
-                    this.game = event.game;
+                    this.board = event.game.board;
+                    this.turn = event.game.turn;
                     this.addGameMessage(`The game has started!`);
                 })
                 .listen('RestartGameEvent', (event) => {
@@ -436,7 +494,7 @@
                     this.doGameMove(event.move);
                 }).listen('GameMessageEvent', (event) => {
                     console.log('new game message: ', event.message);
-                    this.gameMessages.push(event.message);
+                    this.addGameMessage(event.message);
                 });
         }
     }

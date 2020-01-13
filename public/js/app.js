@@ -1896,12 +1896,12 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
-//
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {
+      localLobby: this.lobby,
       connectedPlayers: [],
       message: '',
       messages: [],
@@ -2014,6 +2014,7 @@ __webpack_require__.r(__webpack_exports__);
       _this.gameMode = event.gameMode;
     }).listen('StopGameEvent', function (event) {
       _this.gameMode = '';
+      _this.localLobby.gameState = null;
     });
   }
 });
@@ -2208,12 +2209,24 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {
       board: null,
       turn: null,
+      player1: null,
       possibleMoves: []
     };
   },
@@ -2268,7 +2281,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       return board;
     },
     getDragPermission: function getDragPermission(tile) {
-      return this.turn === this.user.id && tile.type !== 'empty';
+      return this.turn === this.user.id && tile.type !== 'empty' && (tile.colour === 'white' && this.player1 === this.user.id || tile.colour === 'black' && this.player1 !== this.user.id);
     },
     convertNumber: function convertNumber(number) {
       if (number > 7) {
@@ -2279,13 +2292,41 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         return number;
       }
     },
+    getOpponentUser: function getOpponentUser() {
+      var _this2 = this;
+
+      return this.connectedPlayers.find(function (e) {
+        return e.id !== _this2.user.id;
+      });
+    },
 
     /*
         Game control logic
     */
+    checkGameState: function checkGameState() {
+      var gameState = JSON.parse(this.lobby.gameState);
+
+      if (gameState !== null) {
+        this.board = gameState.board;
+        this.turn = gameState.turn;
+        this.player1 = gameState.player1;
+      }
+    },
+    initiateGame: function initiateGame() {
+      window.axios.post("/game/startGame/".concat(this.lobby.url), {
+        game: this.startGame()
+      });
+      this.addGameMessage("The game has started!");
+    },
     startGame: function startGame() {
       this.board = this.initiateBoard();
       this.turn = this.user.id;
+      this.player1 = this.user.id;
+      return {
+        board: this.board,
+        turn: this.turn,
+        player1: this.player1
+      };
     },
     restartGame: function restartGame() {
       window.axios.post("/game/restartGame/".concat(this.lobby.url));
@@ -2297,22 +2338,53 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       this.victory = player;
     },
     sendGameMove: function sendGameMove(gameMove) {
+      var _this3 = this;
+
       console.log('sending: ', gameMove);
-      window.axios.post("/game/gameMove/".concat(this.lobby.url), {
-        move: gameMove
+      this.doGameMove(gameMove).then(function () {
+        window.axios.post("/game/gameMove/".concat(_this3.lobby.url), {
+          move: gameMove,
+          gameState: {
+            board: _this3.board,
+            turn: _this3.turn,
+            player1: _this3.player1
+          }
+        });
       });
-      this.doGameMove(gameMove);
     },
     doGameMove: function doGameMove(gameMove) {
-      var gameMoveData = JSON.parse(JSON.stringify(gameMove));
-      var oldPiece = gameMoveData.oldPiece;
-      var newPiece = gameMoveData.newPiece;
-      Vue.set(this.board[oldPiece.position.y], oldPiece.position.x, {
-        "type": "empty",
-        "position": oldPiece.position
+      var _this4 = this;
+
+      return new Promise(function (resolve) {
+        var gameMoveData = JSON.parse(JSON.stringify(gameMove));
+        console.log('gameMoveData: ', gameMoveData);
+        var oldPiece = gameMoveData.oldPiece;
+        var newPiece = gameMoveData.newPiece;
+        Vue.set(_this4.board[oldPiece.position.y], oldPiece.position.x, {
+          "type": "empty",
+          "position": oldPiece.position
+        });
+        oldPiece.position = newPiece.position;
+
+        if (oldPiece.type === 'pawn' && oldPiece.isInInitialState) {
+          oldPiece.isInInitialState = false;
+        }
+
+        Vue.set(_this4.board[newPiece.position.y], newPiece.position.x, oldPiece);
+
+        if (_this4.turn === _this4.user.id) {
+          var opponent = _this4.getOpponentUser();
+
+          console.log('opponent turn: ', opponent);
+          _this4.turn = opponent.id;
+        } else {
+          console.log('my turn: ');
+          _this4.turn = _this4.user.id;
+        } // ANIMATIONS HERE
+
+
+        resolve(true);
       });
-      oldPiece.position = newPiece.position;
-      Vue.set(this.board[newPiece.position.y], newPiece.position.x, oldPiece);
     },
 
     /*
@@ -2324,7 +2396,8 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       }).length > 0;
     },
     checkPossibleMoves: function checkPossibleMoves(tileData) {
-      var possibleMoves, diagonalMoves, axisMoves, knightPositions, i;
+      var possibleMoves, diagonalMoves, axisMoves, knightPositions, i, kingPositions, _i, pawnPositions, _i2;
+
       return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function checkPossibleMoves$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
@@ -2334,7 +2407,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
               axisMoves = [];
               console.log('tileData: ', tileData);
               _context.t0 = tileData.type;
-              _context.next = _context.t0 === "knight" ? 7 : _context.t0 === "queen" ? 17 : _context.t0 === "rook" ? 26 : _context.t0 === "bishop" ? 31 : _context.t0 === "king" ? 36 : 37;
+              _context.next = _context.t0 === "knight" ? 7 : _context.t0 === "queen" ? 17 : _context.t0 === "rook" ? 26 : _context.t0 === "bishop" ? 31 : _context.t0 === "king" ? 36 : 46;
               break;
 
             case 7:
@@ -2389,7 +2462,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
               break;
 
             case 16:
-              return _context.abrupt("break", 46);
+              return _context.abrupt("break", 60);
 
             case 17:
               _context.next = 19;
@@ -2411,7 +2484,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(axisMoves));
               }
 
-              return _context.abrupt("break", 46);
+              return _context.abrupt("break", 60);
 
             case 26:
               _context.next = 28;
@@ -2424,7 +2497,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(axisMoves));
               }
 
-              return _context.abrupt("break", 46);
+              return _context.abrupt("break", 60);
 
             case 31:
               _context.next = 33;
@@ -2437,81 +2510,148 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(diagonalMoves));
               }
 
-              return _context.abrupt("break", 46);
+              return _context.abrupt("break", 60);
 
             case 36:
-              return _context.abrupt("break", 46);
+              kingPositions = [{
+                y: tileData.position.y - 1,
+                x: tileData.position.x - 1
+              }, {
+                y: tileData.position.y - 1,
+                x: tileData.position.x
+              }, {
+                y: tileData.position.y - 1,
+                x: tileData.position.x + 1
+              }, {
+                y: tileData.position.y,
+                x: tileData.position.x + 1
+              }, {
+                y: tileData.position.y + 1,
+                x: tileData.position.x + 1
+              }, {
+                y: tileData.position.y + 1,
+                x: tileData.position.x
+              }, {
+                y: tileData.position.y + 1,
+                x: tileData.position.x - 1
+              }, {
+                y: tileData.position.y,
+                x: tileData.position.x - 1
+              }];
+              _i = 0;
 
-            case 37:
-              _context.next = 39;
-              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkDiagonal(tileData));
-
-            case 39:
-              diagonalMoves = _context.sent;
-              _context.next = 42;
-              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkAxis(tileData));
-
-            case 42:
-              axisMoves = _context.sent;
-
-              if (diagonalMoves.length > 0) {
-                possibleMoves.push.apply(possibleMoves, _toConsumableArray(diagonalMoves));
+            case 38:
+              if (!(_i < kingPositions.length)) {
+                _context.next = 45;
+                break;
               }
 
-              if (axisMoves.length > 0) {
-                possibleMoves.push.apply(possibleMoves, _toConsumableArray(axisMoves));
-              } // let pawnPositions = [];
-              // if (this.state.youArePlayer === 0) {
-              //     if (this.state.gameState.board[data.position.y - 1][data.position.x].piece === 'empty') {
-              //         pawnPositions.push({y: data.position.y - 1, x: data.position.x});
-              //     }
-              //     if (this.state.gameState.board[data.position.y - 1][data.position.x + 1] !== undefined) {
-              //         if (this.state.gameState.board[data.position.y - 1][data.position.x + 1].colour === 'black') {
-              //             pawnPositions.push({y: data.position.y - 1, x: data.position.x + 1});
-              //         }
-              //     }
-              //     if (this.state.gameState.board[data.position.y - 1][data.position.x - 1] !== undefined) {
-              //         if (this.state.gameState.board[data.position.y - 1][data.position.x - 1].colour === 'black') {
-              //             pawnPositions.push({y: data.position.y - 1, x: data.position.x - 1});
-              //         }
-              //     }
-              //     if (data.isInInitialState && this.state.gameState.board[data.position.y - 2][data.position.x].piece === 'empty') {
-              //         pawnPositions.push({y: data.position.y - 2, x: data.position.x });
-              //     }
-              // } else {
-              //     if (this.state.gameState.board[data.position.y + 1][data.position.x].piece === 'empty') {
+              if (!(kingPositions[_i].y < 0 || kingPositions[_i].x < 0 || kingPositions[_i].y > 7 || kingPositions[_i].x > 7)) {
+                _context.next = 41;
+                break;
+              }
+
+              return _context.abrupt("continue", 42);
+
+            case 41:
+              if (this.board[kingPositions[_i].y][kingPositions[_i].x].colour !== tileData.colour) {
+                possibleMoves.push(kingPositions[_i]);
+              }
+
+            case 42:
+              _i++;
+              _context.next = 38;
+              break;
+
+            case 45:
+              return _context.abrupt("break", 60);
+
+            case 46:
+              pawnPositions = []; // if (this.state.youArePlayer === 0) {
+
+              if (this.board[tileData.position.y - 1][tileData.position.x].type === 'empty') {
+                pawnPositions.push({
+                  y: tileData.position.y - 1,
+                  x: tileData.position.x
+                });
+              }
+
+              if (this.board[tileData.position.y - 1][tileData.position.x + 1] !== undefined) {
+                if (this.board[tileData.position.y - 1][tileData.position.x + 1].colour === 'black') {
+                  pawnPositions.push({
+                    y: tileData.position.y - 1,
+                    x: tileData.position.x + 1
+                  });
+                }
+              }
+
+              if (this.board[tileData.position.y - 1][tileData.position.x - 1] !== undefined) {
+                if (this.board[tileData.position.y - 1][tileData.position.x - 1].colour === 'black') {
+                  pawnPositions.push({
+                    y: tileData.position.y - 1,
+                    x: tileData.position.x - 1
+                  });
+                }
+              }
+
+              if (tileData.isInInitialState && this.board[tileData.position.y - 2][tileData.position.x].type === 'empty') {
+                pawnPositions.push({
+                  y: tileData.position.y - 2,
+                  x: tileData.position.x
+                });
+              } // }
+              // else {
+              //     if (this.board[data.position.y + 1][data.position.x].type === 'empty') {
               //         pawnPositions.push({y: data.position.y + 1, x: data.position.x});
               //     }
-              //     if (this.state.gameState.board[data.position.y + 1][data.position.x + 1] !== undefined) {
-              //         if (this.state.gameState.board[data.position.y + 1][data.position.x + 1].colour === 'white') {
+              //     if (this.board[data.position.y + 1][data.position.x + 1] !== undefined) {
+              //         if (this.board[data.position.y + 1][data.position.x + 1].colour === 'white') {
               //             pawnPositions.push({y: data.position.y + 1, x: data.position.x + 1});
               //         }
               //     }
-              //     if (this.state.gameState.board[data.position.y + 1][data.position.x - 1] !== undefined) {
-              //         if (this.state.gameState.board[data.position.y + 1][data.position.x - 1].colour === 'white') {
+              //     if (this.board[data.position.y + 1][data.position.x - 1] !== undefined) {
+              //         if (this.board[data.position.y + 1][data.position.x - 1].colour === 'white') {
               //             pawnPositions.push({y: data.position.y + 1, x: data.position.x - 1});
               //         }
               //     }
-              //     if (data.isInInitialState && this.state.gameState.board[data.position.y + 2][data.position.x].piece === 'empty') {
+              //     if (data.isInInitialState && this.board[data.position.y + 2][data.position.x].type === 'empty') {
               //         pawnPositions.push({y: data.position.y + 2, x: data.position.x });
               //     }
               // }
-              // for (let i = 0; i < pawnPositions.length; i++) {
-              //     if (pawnPositions[i].y < 0 || pawnPositions[i].x < 0 || pawnPositions[i].y > 7 || pawnPositions[i].x > 7) {
-              //         continue
-              //     }
-              //     if (this.state.gameState.board[pawnPositions[i].y][pawnPositions[i].x].colour !== data.color) {
-              //         possibleMoves.push(pawnPositions[i]);
-              //     }
-              // }
 
 
-              return _context.abrupt("break", 46);
+              _i2 = 0;
 
-            case 46:
+            case 52:
+              if (!(_i2 < pawnPositions.length)) {
+                _context.next = 59;
+                break;
+              }
+
+              if (!(pawnPositions[_i2].y < 0 || pawnPositions[_i2].x < 0 || pawnPositions[_i2].y > 7 || pawnPositions[_i2].x > 7)) {
+                _context.next = 55;
+                break;
+              }
+
+              return _context.abrupt("continue", 56);
+
+            case 55:
+              if (this.board[pawnPositions[_i2].y][pawnPositions[_i2].x].colour !== tileData.colour) {
+                possibleMoves.push(pawnPositions[_i2]);
+              }
+
+            case 56:
+              _i2++;
+              _context.next = 52;
+              break;
+
+            case 59:
+              return _context.abrupt("break", 60);
+
+            case 60:
               this.possibleMoves = possibleMoves;
 
-            case 47:
+            case 61:
             case "end":
               return _context.stop();
           }
@@ -2519,28 +2659,28 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       }, null, this);
     },
     checkDiagonal: function checkDiagonal(tileData) {
-      var _this2 = this;
+      var _this5 = this;
 
       return new Promise(function (resolve) {
         var possibleMoves = [];
         var edgePositions = [{
-          x: _this2.convertNumber(tileData.position.x - tileData.position.y),
-          y: _this2.convertNumber(tileData.position.y - tileData.position.x)
+          x: _this5.convertNumber(tileData.position.x - tileData.position.y),
+          y: _this5.convertNumber(tileData.position.y - tileData.position.x)
         }, {
-          x: _this2.convertNumber(tileData.position.x + tileData.position.y),
-          y: _this2.convertNumber(tileData.position.x - (7 - tileData.position.y))
+          x: _this5.convertNumber(tileData.position.x + tileData.position.y),
+          y: _this5.convertNumber(tileData.position.x - (7 - tileData.position.y))
         }, {
-          x: _this2.convertNumber(tileData.position.x + (7 - tileData.position.y)),
-          y: _this2.convertNumber(tileData.position.y + (7 - tileData.position.x))
+          x: _this5.convertNumber(tileData.position.x + (7 - tileData.position.y)),
+          y: _this5.convertNumber(tileData.position.y + (7 - tileData.position.x))
         }, {
-          x: _this2.convertNumber(tileData.position.x + tileData.position.y - 7),
-          y: _this2.convertNumber(tileData.position.x + tileData.position.y)
+          x: _this5.convertNumber(tileData.position.x + tileData.position.y - 7),
+          y: _this5.convertNumber(tileData.position.x + tileData.position.y)
         }];
 
         for (var i = 0; i < edgePositions.length; i++) {
           var angle = Math.atan2(edgePositions[i].y - tileData.position.y, edgePositions[i].x - tileData.position.x) * 180 / Math.PI;
           var distance = Math.floor(Math.sqrt(Math.pow(tileData.position.x - edgePositions[i].x, 2) + Math.pow(tileData.position.y - edgePositions[i].y, 2)));
-          possibleMoves.push.apply(possibleMoves, _toConsumableArray(_this2.checkDiagonalJump(angle, distance, tileData)));
+          possibleMoves.push.apply(possibleMoves, _toConsumableArray(_this5.checkDiagonalJump(angle, distance, tileData)));
         }
 
         resolve(possibleMoves);
@@ -2601,14 +2741,14 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       return possibleMoves;
     },
     checkAxis: function checkAxis(tileData) {
-      var _this3 = this;
+      var _this6 = this;
 
       return new Promise(function (resolve) {
         var possibleMoves = [];
         var position = tileData.position;
 
         for (var i = position.x - 1; i >= 0; i--) {
-          var tile = _this3.board[position.y][i];
+          var tile = _this6.board[position.y][i];
 
           if (tile.type !== 'empty') {
             if (tile.colour !== tileData.colour) {
@@ -2621,8 +2761,8 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
           }
         }
 
-        for (var _i = position.x + 1; _i <= 7; _i++) {
-          var _tile = _this3.board[position.y][_i];
+        for (var _i3 = position.x + 1; _i3 <= 7; _i3++) {
+          var _tile = _this6.board[position.y][_i3];
 
           if (_tile.type !== 'empty') {
             if (_tile.colour !== tileData.colour) {
@@ -2635,8 +2775,8 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
           }
         }
 
-        for (var _i2 = position.y - 1; _i2 >= 0; _i2--) {
-          var _tile2 = _this3.board[_i2][position.x];
+        for (var _i4 = position.y - 1; _i4 >= 0; _i4--) {
+          var _tile2 = _this6.board[_i4][position.x];
 
           if (_tile2.type !== 'empty') {
             if (_tile2.colour !== tileData.colour) {
@@ -2649,8 +2789,8 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
           }
         }
 
-        for (var _i3 = position.y + 1; _i3 <= 7; _i3++) {
-          var _tile3 = _this3.board[_i3][position.x];
+        for (var _i5 = position.y + 1; _i5 <= 7; _i5++) {
+          var _tile3 = _this6.board[_i5][position.x];
 
           if (_tile3.type !== 'empty') {
             if (_tile3.colour !== tileData.colour) {
@@ -2674,40 +2814,33 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         Game message system
     */
     addGameMessage: function addGameMessage(message) {
-      var _this4 = this;
-
-      console.log('message: ', message);
-      this.gameMessages.push(message);
-      setTimeout(function () {
-        _this4.gameMessages = _this4.gameMessages.filter(function (e) {
-          return e !== message;
-        });
-      }, 10000);
+      this.$emit('addGameMessage', message);
     }
   },
   mounted: function mounted() {
-    var _this5 = this;
+    var _this7 = this;
 
-    console.log('Game Component mounted.'); // Bind the mouse up to emptying possible moves, if the user tries to drop outside of the board.
+    console.log('Chess Component mounted.'); // Bind the mouse up to emptying possible moves, if the user tries to drop outside of the board.
 
     window.addEventListener('dragend', this.emptyPossibleMoves);
-    this.startGame();
+    this.checkGameState();
     Echo.join('game.' + this.lobby.url).listen('StartGameEvent', function (event) {
       console.log('new game: ', event.game);
-      _this5.game = event.game;
+      _this7.board = event.game.board;
+      _this7.turn = event.game.turn;
 
-      _this5.addGameMessage("The game has started!");
+      _this7.addGameMessage("The game has started!");
     }).listen('RestartGameEvent', function (event) {
       console.log('restarting game');
-      _this5.board = null;
+      _this7.board = null;
 
-      _this5.addGameMessage("The game has been reset!");
+      _this7.addGameMessage("The game has been reset!");
     }).listen('GameMoveEvent', function (event) {
-      _this5.doGameMove(event.move);
+      _this7.doGameMove(event.move);
     }).listen('GameMessageEvent', function (event) {
       console.log('new game message: ', event.message);
 
-      _this5.gameMessages.push(event.message);
+      _this7.addGameMessage(event.message);
     });
   }
 });
@@ -3501,9 +3634,22 @@ __webpack_require__.r(__webpack_exports__);
   props: {
     tileData: null,
     canDrag: false,
-    possibleTarget: false
+    possibleTarget: false,
+    isPlayer1: false
   },
   methods: {
+    classType: function classType() {
+      var className = '';
+
+      if (this.isPlayer1 && this.tileData.colour === 'white') {
+        className += 'white-piece';
+      } else if (!this.isPlayer1 && this.tileData.colour === 'black') {
+        className += 'white-piece';
+      }
+
+      className += ' piece-icon';
+      return className;
+    },
     getPieceImage: function getPieceImage(name) {
       if (name) {
         return "/images/icons/chess/".concat(name, ".svg");
@@ -3528,9 +3674,13 @@ __webpack_require__.r(__webpack_exports__);
       this.removeHighlight();
     },
     handleDragStart: function handleDragStart(e, tileData) {
-      console.log('dragStart: ', tileData);
-      e.dataTransfer.setData('text/plain', JSON.stringify(tileData));
-      this.highlightMoves(tileData);
+      if (this.canDrag) {
+        console.log('dragStart: ', tileData);
+        e.dataTransfer.setData('text/plain', JSON.stringify(tileData));
+        this.highlightMoves(tileData);
+      } else {
+        e.preventDefault();
+      }
     },
     highlightMoves: function highlightMoves(tileData) {
       this.$emit('checkPossibleMoves', tileData);
@@ -46617,10 +46767,10 @@ var render = function() {
       _vm.gameMode === "Game Of Ladders"
         ? _c("games-of-ladders", {
             attrs: {
-              lobby: _vm.lobby,
+              lobby: this.localLobby,
               "connected-players": _vm.connectedPlayers,
               user: _vm.user,
-              gameState: JSON.parse(_vm.lobby.gameState)
+              gameState: JSON.parse(this.localLobby.gameState)
             },
             on: { addGameMessage: _vm.addGameMessage }
           })
@@ -46629,10 +46779,9 @@ var render = function() {
       _vm.gameMode === "Chess"
         ? _c("chess", {
             attrs: {
-              lobby: _vm.lobby,
+              lobby: this.localLobby,
               "connected-players": _vm.connectedPlayers,
-              user: _vm.user,
-              gameState: JSON.parse(_vm.lobby.gameState)
+              user: _vm.user
             },
             on: { addGameMessage: _vm.addGameMessage }
           })
@@ -46699,36 +46848,61 @@ var render = function() {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  return _vm.board !== null
-    ? _c(
-        "div",
-        { staticClass: "board chess" },
-        _vm._l(_vm.board, function(row) {
-          return _c(
-            "div",
-            { staticClass: "row" },
-            _vm._l(row, function(tile, index) {
-              return _c("chess-piece", {
-                key: index,
-                staticClass: "tile",
-                attrs: {
-                  "tile-data": tile,
-                  "can-drag": _vm.getDragPermission(tile),
-                  possibleTarget: _vm.checkInPossibleMoves(tile)
-                },
-                on: {
-                  checkPossibleMoves: _vm.checkPossibleMoves,
-                  emptyPossibleMoves: _vm.emptyPossibleMoves,
-                  sendGameMove: _vm.sendGameMove
+  return _c("div", { staticClass: "game" }, [
+    _vm.board !== null
+      ? _c(
+          "div",
+          {
+            class: [
+              "board",
+              "chess",
+              this.player1 !== this.user.id ? "player2" : ""
+            ]
+          },
+          _vm._l(_vm.board, function(row) {
+            return _c(
+              "div",
+              { staticClass: "row" },
+              _vm._l(row, function(tile, index) {
+                return _c("chess-piece", {
+                  key: index,
+                  staticClass: "tile",
+                  attrs: {
+                    "tile-data": tile,
+                    "can-drag": _vm.getDragPermission(tile),
+                    possibleTarget: _vm.checkInPossibleMoves(tile),
+                    isPlayer1: _vm.player1 === _vm.user.id
+                  },
+                  on: {
+                    checkPossibleMoves: _vm.checkPossibleMoves,
+                    emptyPossibleMoves: _vm.emptyPossibleMoves,
+                    sendGameMove: _vm.sendGameMove
+                  }
+                })
+              }),
+              1
+            )
+          }),
+          0
+        )
+      : _vm._e(),
+    _vm._v(" "),
+    _vm.board === null
+      ? _c("div", { staticClass: "buttons" }, [
+          _c(
+            "button",
+            {
+              on: {
+                click: function($event) {
+                  return _vm.initiateGame()
                 }
-              })
-            }),
-            1
+              }
+            },
+            [_vm._v("Start Game")]
           )
-        }),
-        0
-      )
-    : _vm._e()
+        ])
+      : _vm._e()
+  ])
 }
 var staticRenderFns = []
 render._withStripped = true

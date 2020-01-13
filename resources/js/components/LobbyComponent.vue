@@ -24,18 +24,17 @@
         <!--Games-->
         <games-of-ladders
             v-if="gameMode === 'Game Of Ladders'"
-            v-bind:lobby="lobby"
+            v-bind:lobby="this.localLobby"
             v-bind:connected-players="connectedPlayers"
             v-bind:user="user"
-            v-bind:gameState="JSON.parse(lobby.gameState)"
+            v-bind:gameState="JSON.parse(this.localLobby.gameState)"
             @addGameMessage="addGameMessage"
         />
         <chess
             v-if="gameMode === 'Chess'"
-            v-bind:lobby="lobby"
+            v-bind:lobby="this.localLobby"
             v-bind:connected-players="connectedPlayers"
             v-bind:user="user"
-            v-bind:gameState="JSON.parse(lobby.gameState)"
             @addGameMessage="addGameMessage"
         />
 
@@ -51,6 +50,7 @@
     export default {
         data() {
             return {
+                localLobby: this.lobby,
                 connectedPlayers: [],
                 message: '',
                 messages: [],
@@ -63,7 +63,7 @@
                     'Tic Tac Toe',
                     'BattleShip',
                     'Draw My Thing'
-                ]
+                ],
             }
         },
 
@@ -186,6 +186,7 @@
                 })
                 .listen('StopGameEvent', (event) => {
                     this.gameMode = '';
+                    this.localLobby.gameState = null;
                 })
         }
     }
