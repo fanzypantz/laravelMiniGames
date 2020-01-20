@@ -2417,9 +2417,10 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
             case 4:
               check = _context.sent;
+              this.isChecked = check;
               console.log('check: ', check);
 
-            case 6:
+            case 7:
             case "end":
               return _context.stop();
           }
@@ -2462,6 +2463,8 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                   })[0];
 
                   if (king !== undefined) {
+                    console.log('found king: ', king);
+
                     if (king.distance === 1) {
                       resolve(true);
                     }
@@ -2487,6 +2490,8 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                   })[0];
 
                   if (_king !== undefined) {
+                    console.log('found king: ', _king);
+
                     if (_king.distance === 1) {
                       resolve(true);
                     }
@@ -2546,7 +2551,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 return _context2.abrupt("continue", 18);
 
               case 17:
-                if (_this5.board[knightPositions[i].y][knightPositions[i].y].type === 'knight') {
+                if (_this5.board[knightPositions[i].y][knightPositions[i].x].type === 'knight') {
                   resolve(true);
                 }
 
@@ -2954,7 +2959,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 y: y,
                 x: x,
                 type: this.board[y][x].type,
-                distance: distance - i - 1
+                distance: i
               });
             }
 
@@ -2964,7 +2969,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
               y: y,
               x: x,
               type: this.board[y][x].type,
-              distance: distance - i - 1
+              distance: i
             });
           }
         } else {
@@ -2980,8 +2985,10 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       return new Promise(function (resolve) {
         var possibleMoves = [];
         var position = tileData.position;
+        var distance = 0;
 
         for (var i = position.x - 1; i >= 0; i--) {
+          distance++;
           var tile = _this7.board[position.y][i];
 
           if (tile.type !== 'empty') {
@@ -2989,7 +2996,8 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
               possibleMoves.push({
                 x: tile.position.x,
                 y: tile.position.y,
-                type: tile.type
+                type: tile.type,
+                distance: distance
               });
             }
 
@@ -2998,12 +3006,16 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
             possibleMoves.push({
               x: tile.position.x,
               y: tile.position.y,
-              type: tile.type
+              type: tile.type,
+              distance: distance
             });
           }
         }
 
+        distance = 0;
+
         for (var _i5 = position.x + 1; _i5 <= 7; _i5++) {
+          distance++;
           var _tile = _this7.board[position.y][_i5];
 
           if (_tile.type !== 'empty') {
@@ -3011,7 +3023,8 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
               possibleMoves.push({
                 x: _tile.position.x,
                 y: _tile.position.y,
-                type: _tile.type
+                type: _tile.type,
+                distance: distance
               });
             }
 
@@ -3020,12 +3033,16 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
             possibleMoves.push({
               x: _tile.position.x,
               y: _tile.position.y,
-              type: _tile.type
+              type: _tile.type,
+              distance: distance
             });
           }
         }
 
+        distance = 0;
+
         for (var _i6 = position.y - 1; _i6 >= 0; _i6--) {
+          distance++;
           var _tile2 = _this7.board[_i6][position.x];
 
           if (_tile2.type !== 'empty') {
@@ -3033,7 +3050,8 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
               possibleMoves.push({
                 x: _tile2.position.x,
                 y: _tile2.position.y,
-                type: _tile2.type
+                type: _tile2.type,
+                distance: distance
               });
             }
 
@@ -3042,12 +3060,16 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
             possibleMoves.push({
               x: _tile2.position.x,
               y: _tile2.position.y,
-              type: _tile2.type
+              type: _tile2.type,
+              distance: distance
             });
           }
         }
 
+        distance = 0;
+
         for (var _i7 = position.y + 1; _i7 <= 7; _i7++) {
+          distance++;
           var _tile3 = _this7.board[_i7][position.x];
 
           if (_tile3.type !== 'empty') {
@@ -3055,7 +3077,8 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
               possibleMoves.push({
                 x: _tile3.position.x,
                 y: _tile3.position.y,
-                type: _tile3.type
+                type: _tile3.type,
+                distance: distance
               });
             }
 
@@ -3064,7 +3087,8 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
             possibleMoves.push({
               x: _tile3.position.x,
               y: _tile3.position.y,
-              type: _tile3.type
+              type: _tile3.type,
+              distance: distance
             });
           }
         }

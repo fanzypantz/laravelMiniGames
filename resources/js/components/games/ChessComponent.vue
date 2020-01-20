@@ -228,6 +228,8 @@
                     position: king.position,
                     colour: king.colour,
                 });
+
+                this.isChecked = check;
                 console.log('check: ', check);
             },
 
@@ -245,6 +247,7 @@
                         let count = 0;
                         let king = diagonalMoves.filter(e => e.type === 'king')[0];
                         if (king !== undefined) {
+                            console.log('found king: ', king);
                             if (king.distance === 1) {
                                 resolve(true);
                             }
@@ -260,6 +263,7 @@
                         let count = 0;
                         let king = axisMoves.filter(e => e.type === 'king')[0];
                         if (king !== undefined) {
+                            console.log('found king: ', king);
                             if (king.distance === 1) {
                                 resolve(true);
                             }
@@ -286,7 +290,7 @@
                         if (knightPositions[i].y > 7 || knightPositions[i].x > 7 || knightPositions[i].y < 0 || knightPositions[i].x < 0) {
                             continue;
                         }
-                        if (this.board[knightPositions[i].y][knightPositions[i].y].type === 'knight') {
+                        if (this.board[knightPositions[i].y][knightPositions[i].x].type === 'knight') {
                             resolve(true);
                         }
                     }
@@ -519,11 +523,11 @@
                     if (x <= 7 && x >= 0 && y <= 7 && y >= 0) {
                         if (this.board[y][x].type !== "empty") {
                             if (this.board[y][x].colour !== tileData.colour) {
-                                possibleMoves.push({y: y, x: x, type: this.board[y][x].type, distance: distance - i - 1})
+                                possibleMoves.push({y: y, x: x, type: this.board[y][x].type, distance: i})
                             }
                             return possibleMoves;
                         } else {
-                            possibleMoves.push({y: y, x: x, type: this.board[y][x].type, distance: distance - i - 1});
+                            possibleMoves.push({y: y, x: x, type: this.board[y][x].type, distance: i});
                         }
                     } else {
                         return possibleMoves;
@@ -536,49 +540,57 @@
                 return new Promise((resolve) => {
                     let possibleMoves = [];
                     let position = tileData.position;
+                    let distance = 0;
 
                     for (let i = position.x - 1; i >= 0; i--) {
+                        distance++;
                         let tile = this.board[position.y][i];
                         if (tile.type !== 'empty') {
                             if (tile.colour !== tileData.colour) {
-                                possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type});
+                                possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type, distance: distance});
                             }
                             break;
                         } else {
-                            possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type});
+                            possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type, distance: distance});
                         }
                     }
+                    distance = 0;
                     for (let i = position.x + 1; i <= 7; i++) {
+                        distance++;
                         let tile = this.board[position.y][i];
                         if (tile.type !== 'empty') {
                             if (tile.colour !== tileData.colour) {
-                                possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type});
+                                possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type, distance: distance});
                             }
                             break;
                         } else {
-                            possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type});
+                            possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type, distance: distance});
                         }
                     }
+                    distance = 0;
                     for (let i = position.y - 1; i >= 0; i--) {
+                        distance++;
                         let tile = this.board[i][position.x];
                         if (tile.type !== 'empty') {
                             if (tile.colour !== tileData.colour) {
-                                possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type});
+                                possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type, distance: distance});
                             }
                             break;
                         } else {
-                            possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type});
+                            possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type, distance: distance});
                         }
                     }
+                    distance = 0;
                     for (let i = position.y + 1; i <= 7; i++) {
+                        distance++;
                         let tile = this.board[i][position.x];
                         if (tile.type !== 'empty') {
                             if (tile.colour !== tileData.colour) {
-                                possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type});
+                                possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type, distance: distance});
                             }
                             break;
                         } else {
-                            possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type});
+                            possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type, distance: distance});
                         }
                     }
                     resolve(possibleMoves);
