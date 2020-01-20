@@ -1118,5 +1118,24 @@ nav .nav-item:hover {
           flex-flow: row-reverse;
 }
 
+.promote {
+  display: -webkit-box;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+          flex-direction: column;
+  -webkit-box-pack: center;
+          justify-content: center;
+  -webkit-box-align: center;
+          align-items: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%);
+  background: #245c9b;
+  padding: 20px 50px;
+}
+
 
 /*# sourceMappingURL=app.css.map*/

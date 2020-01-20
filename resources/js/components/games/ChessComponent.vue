@@ -14,6 +14,7 @@
                     v-bind:isPlayer1="player1 === user.id"
                     @checkPossibleMoves="checkPossibleMoves"
                     @emptyPossibleMoves="emptyPossibleMoves"
+                    @togglePromote="togglePromote"
                     @sendGameMove="sendGameMove"
                 />
             </div>
@@ -24,7 +25,17 @@
             <button @click="initiateGame()">Start Game</button>
         </div>
 
+        <!--Promote Menu-->
+        <div v-if="isPromoting && gameMove !== null" class="promote">
+            <h2>Select piece to promote</h2>
+            <div class="promote-type">
+                <img v-bind:src="getPieceImage('queen')" alt="" @click="promote('queen')"/>
+                <img v-bind:src="getPieceImage('knight')" alt="" @click="promote('knight')"/>
+                <img v-bind:src="getPieceImage('rook')" alt="" @click="promote('rook')"/>
+                <img v-bind:src="getPieceImage('bishop')" alt="" @click="promote('bishop')"/>
+            </div>
 
+        </div>
     </div>
 
 </template>
@@ -36,11 +47,13 @@
     export default {
         data() {
             return {
+                isChecked: false,
+                isPromoting: false,
                 board: null,
                 turn: null,
                 player1: null,
-                isChecked: false,
                 possibleMoves: [],
+                gameMove: null,
             }
         },
 
@@ -115,6 +128,14 @@
                 return this.connectedPlayers.find(e => e.id !== this.user.id);
             },
 
+            getPieceImage(name) {
+                if (name) {
+                    return `/images/icons/chess/${name}.svg`;
+                } else{
+                    return `/images/icons/play.svg`;
+                }
+            },
+
             /*
                 Game control logic
             */
@@ -169,6 +190,35 @@
                 });
             },
 
+            togglePromote(gameMove) {
+                if (gameMove !== null && gameMove !== undefined) {
+                    this.gameMove = gameMove;
+                    this.isPromoting = true;
+                } else {
+                    this.gameMove = null;
+                    this.isPromoting = false;
+                }
+            },
+
+            promote(type) {
+                switch (type) {
+                    case 'queen':
+                        this.gameMove.oldPiece.type = 'queen';
+                        break;
+                    case 'knight':
+                        this.gameMove.oldPiece.type = 'knight';
+                        break;
+                    case 'rook':
+                        this.gameMove.oldPiece.type = 'rook';
+                        break;
+                    default:
+                        this.gameMove.oldPiece.type = 'bishop';
+                        break;
+                }
+                this.sendGameMove(this.gameMove);
+                this.togglePromote();
+            },
+
             doGameMove(gameMove) {
                 return new Promise(resolve => {
 
@@ -205,7 +255,6 @@
 
                     // Check if king has been put in check or checkmate
                     this.checkKingIsChecked();
-
                     resolve(true);
                 });
             },
@@ -216,171 +265,10 @@
                 }
             },
 
-            async checkKingIsChecked() {
-                let king;
-                let kingType = this.player1 === this.user.id ? 'white' : 'black';
-                king = this.board.reduce(function (a, b) {
-                        return a.concat(b);
-                    }).filter((row) => {
-                        return row.type === 'king' && row.colour === kingType;
-                    })[0];
-
-                let check = await this.checkKingTiles({
-                    position: king.position,
-                    colour: king.colour,
-                });
-
-                let positions = [
-                    {
-                        x: king.position.x - 1,
-                        y: king.position.y - 1
-                    },
-                    {
-                        x: king.position.x,
-                        y: king.position.y - 1
-                    },
-                    {
-                        x: king.position.x + 1,
-                        y: king.position.y - 1
-                    },
-                    {
-                        x: king.position.x + 1,
-                        y: king.position.y
-                    },
-                    {
-                        x: king.position.x + 1,
-                        y: king.position.y + 1
-                    },
-                    {
-                        x: king.position.x,
-                        y: king.position.y + 1
-                    },
-                    {
-                        x: king.position.x - 1,
-                        y: king.position.y + 1
-                    },
-                    {
-                        x: king.position.x - 1,
-                        y: king.position.y
-                    },
-                ];
-
-                let checkMateCount = 0;
-                for (const position of positions) {
-                    if (position.x > 7 || position.y > 7 || position.x < 0 || position.y < 0) {
-                        continue;
-                    }
-                    // If the tile around the king will also be check, add to the count
-                    if (await this.checkKingTiles({
-                        position: position,
-                        colour: king.colour
-                    })){
-                        checkMateCount++;
-                    }
-                }
-
-                if (checkMateCount === 8) {
-                    alert("Check Mate")
-                }
-
-                this.isChecked = check;
-                console.log('check: ', check);
-            },
-
-            checkKingTiles(tileData) {
-                return new Promise (async (resolve, reject) => {
-                    let diagonalMoves = await this.checkDiagonal(tileData);
-                    diagonalMoves = diagonalMoves.filter(e => e.type !== 'empty');
-                    let axisMoves = await this.checkAxis(tileData);
-                    axisMoves = axisMoves.filter(e => e.type !== 'empty');
-                    console.log('diagonalMoves: ', diagonalMoves);
-                    console.log('axisMoves: ', axisMoves);
-
-                    // Check if any diagonal pieces can kill the king
-                    if (diagonalMoves.length > 0) {
-                        let count = 0;
-                        let king = diagonalMoves.filter(e => e.type === 'king')[0];
-                        if (king !== undefined) {
-                            console.log('found king: ', king);
-                            if (king.distance === 1) {
-                                resolve(true);
-                            }
-                        }
-                        count += diagonalMoves.filter(e => e.type ===  'queen').length;
-                        count += diagonalMoves.filter(e => e.type ===  'bishop').length;
-                        if (count > 0) {
-                            resolve(true);
-                        }
-                    }
-                    // Check if anything from the sides can kill the king
-                    if (axisMoves.length > 0) {
-                        let count = 0;
-                        let king = axisMoves.filter(e => e.type === 'king')[0];
-                        if (king !== undefined) {
-                            console.log('found king: ', king);
-                            if (king.distance === 1) {
-                                resolve(true);
-                            }
-                        }
-                        count += axisMoves.filter(e => e.type ===  'queen').length;
-                        count += axisMoves.filter(e => e.type ===  'rook').length;
-                        if (count > 0) {
-                            resolve(true);
-                        }
-                    }
-
-                    // Check if there is a knight that can jump on king
-                    let knightPositions = [
-                        {y: tileData.position.y - 1, x: tileData.position.x - 2},
-                        {y: tileData.position.y + 1, x: tileData.position.x - 2},
-                        {y: tileData.position.y - 2, x: tileData.position.x - 1},
-                        {y: tileData.position.y - 2, x: tileData.position.x + 1},
-                        {y: tileData.position.y - 1, x: tileData.position.x + 2},
-                        {y: tileData.position.y + 1, x: tileData.position.x + 2},
-                        {y: tileData.position.y + 2, x: tileData.position.x + 1},
-                        {y: tileData.position.y + 2, x: tileData.position.x - 1},
-                    ];
-                    for (let i = 0; i < knightPositions.length; i++) {
-                        if (knightPositions[i].y > 7 || knightPositions[i].x > 7 || knightPositions[i].y < 0 || knightPositions[i].x < 0) {
-                            continue;
-                        }
-                        if (this.board[knightPositions[i].y][knightPositions[i].x].type === 'knight') {
-                            resolve(true);
-                        }
-                    }
-
-
-                    // Check if there are any pawns
-                    let pawns = axisMoves.filter(e => e.type === 'pawn');
-                    if (pawns.length > 0) {
-                        if (this.player1 === this.user.id) {
-                            for (let i = 0; i < pawns.length; i++) {
-                                if (
-                                    pawns[i].position === {x: tileData.position.x-1, y: tileData.position.y-1} ||
-                                    pawns[i].position === {x: tileData.position.x+1, y: tileData.position.y-1}
-                                ) {
-                                    resolve(true);
-                                }
-                            }
-                        } else {
-                            for (let i = 0; i < pawns.length; i++) {
-                                if (
-                                    pawns[i].position === {x: tileData.position.x+1, y: tileData.position.y+1} ||
-                                    pawns[i].position === {x: tileData.position.x-1, y: tileData.position.y+1}
-                                ) {
-                                    resolve(true);
-                                }
-                            }
-                        }
-                    }
-
-                    resolve(false)
-                });
-            },
-
             handleWin(attacker) {
 
             },
+
 
             /*
                 Check possible game moves
@@ -655,6 +543,163 @@
 
             emptyPossibleMoves() {
                 this.possibleMoves = [];
+            },
+
+            async checkKingIsChecked() {
+                let king;
+                let kingType = this.player1 === this.user.id ? 'white' : 'black';
+                king = this.board.reduce(function (a, b) {
+                    return a.concat(b);
+                }).filter((row) => {
+                    return row.type === 'king' && row.colour === kingType;
+                })[0];
+
+                let check = await this.checkKingTiles({
+                    position: king.position,
+                    colour: king.colour,
+                });
+
+                let positions = [
+                    {
+                        x: king.position.x - 1,
+                        y: king.position.y - 1
+                    },
+                    {
+                        x: king.position.x,
+                        y: king.position.y - 1
+                    },
+                    {
+                        x: king.position.x + 1,
+                        y: king.position.y - 1
+                    },
+                    {
+                        x: king.position.x + 1,
+                        y: king.position.y
+                    },
+                    {
+                        x: king.position.x + 1,
+                        y: king.position.y + 1
+                    },
+                    {
+                        x: king.position.x,
+                        y: king.position.y + 1
+                    },
+                    {
+                        x: king.position.x - 1,
+                        y: king.position.y + 1
+                    },
+                    {
+                        x: king.position.x - 1,
+                        y: king.position.y
+                    },
+                ];
+
+                let checkMateCount = 0;
+                for (const position of positions) {
+                    if (position.x > 7 || position.y > 7 || position.x < 0 || position.y < 0) {
+                        continue;
+                    }
+                    // If the tile around the king will also be check, add to the count
+                    if (await this.checkKingTiles({
+                        position: position,
+                        colour: king.colour
+                    })){
+                        checkMateCount++;
+                    }
+                }
+
+                if (checkMateCount === 8) {
+                    alert("Check Mate")
+                }
+
+                this.isChecked = check;
+                console.log('check: ', check);
+            },
+
+            checkKingTiles(tileData) {
+                return new Promise (async (resolve, reject) => {
+                    let diagonalMoves = await this.checkDiagonal(tileData);
+                    diagonalMoves = diagonalMoves.filter(e => e.type !== 'empty');
+                    let axisMoves = await this.checkAxis(tileData);
+                    axisMoves = axisMoves.filter(e => e.type !== 'empty');
+                    // Check if any diagonal pieces can kill the king
+                    if (diagonalMoves.length > 0) {
+                        let count = 0;
+                        let king = diagonalMoves.filter(e => e.type === 'king')[0];
+                        if (king !== undefined) {
+                            if (king.distance === 1) {
+                                resolve(true);
+                            }
+                        }
+                        count += diagonalMoves.filter(e => e.type ===  'queen').length;
+                        count += diagonalMoves.filter(e => e.type ===  'bishop').length;
+                        if (count > 0) {
+                            resolve(true);
+                        }
+                    }
+                    // Check if anything from the sides can kill the king
+                    if (axisMoves.length > 0) {
+                        let count = 0;
+                        let king = axisMoves.filter(e => e.type === 'king')[0];
+                        if (king !== undefined) {
+                            if (king.distance === 1) {
+                                resolve(true);
+                            }
+                        }
+                        count += axisMoves.filter(e => e.type ===  'queen').length;
+                        count += axisMoves.filter(e => e.type ===  'rook').length;
+                        if (count > 0) {
+                            resolve(true);
+                        }
+                    }
+
+                    // Check if there is a knight that can jump on king
+                    let knightPositions = [
+                        {y: tileData.position.y - 1, x: tileData.position.x - 2},
+                        {y: tileData.position.y + 1, x: tileData.position.x - 2},
+                        {y: tileData.position.y - 2, x: tileData.position.x - 1},
+                        {y: tileData.position.y - 2, x: tileData.position.x + 1},
+                        {y: tileData.position.y - 1, x: tileData.position.x + 2},
+                        {y: tileData.position.y + 1, x: tileData.position.x + 2},
+                        {y: tileData.position.y + 2, x: tileData.position.x + 1},
+                        {y: tileData.position.y + 2, x: tileData.position.x - 1},
+                    ];
+                    for (let i = 0; i < knightPositions.length; i++) {
+                        if (knightPositions[i].y > 7 || knightPositions[i].x > 7 || knightPositions[i].y < 0 || knightPositions[i].x < 0) {
+                            continue;
+                        }
+                        if (this.board[knightPositions[i].y][knightPositions[i].x].type === 'knight') {
+                            resolve(true);
+                        }
+                    }
+
+
+                    // Check if there are any pawns
+                    let pawns = axisMoves.filter(e => e.type === 'pawn');
+                    if (pawns.length > 0) {
+                        if (this.player1 === this.user.id) {
+                            for (let i = 0; i < pawns.length; i++) {
+                                if (
+                                    pawns[i].position === {x: tileData.position.x-1, y: tileData.position.y-1} ||
+                                    pawns[i].position === {x: tileData.position.x+1, y: tileData.position.y-1}
+                                ) {
+                                    resolve(true);
+                                }
+                            }
+                        } else {
+                            for (let i = 0; i < pawns.length; i++) {
+                                if (
+                                    pawns[i].position === {x: tileData.position.x+1, y: tileData.position.y+1} ||
+                                    pawns[i].position === {x: tileData.position.x-1, y: tileData.position.y+1}
+                                ) {
+                                    resolve(true);
+                                }
+                            }
+                        }
+                    }
+
+                    resolve(false)
+                });
             },
 
             /*

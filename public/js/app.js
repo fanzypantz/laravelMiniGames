@@ -2222,15 +2222,28 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {
+      isChecked: false,
+      isPromoting: false,
       board: null,
       turn: null,
       player1: null,
-      isChecked: false,
-      possibleMoves: []
+      possibleMoves: [],
+      gameMove: null
     };
   },
   props: {
@@ -2302,6 +2315,13 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         return e.id !== _this2.user.id;
       });
     },
+    getPieceImage: function getPieceImage(name) {
+      if (name) {
+        return "/images/icons/chess/".concat(name, ".svg");
+      } else {
+        return "/images/icons/play.svg";
+      }
+    },
 
     /*
         Game control logic
@@ -2353,6 +2373,37 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         });
       });
     },
+    togglePromote: function togglePromote(gameMove) {
+      if (gameMove !== null && gameMove !== undefined) {
+        this.gameMove = gameMove;
+        this.isPromoting = true;
+      } else {
+        this.gameMove = null;
+        this.isPromoting = false;
+      }
+    },
+    promote: function promote(type) {
+      switch (type) {
+        case 'queen':
+          this.gameMove.oldPiece.type = 'queen';
+          break;
+
+        case 'knight':
+          this.gameMove.oldPiece.type = 'knight';
+          break;
+
+        case 'rook':
+          this.gameMove.oldPiece.type = 'rook';
+          break;
+
+        default:
+          this.gameMove.oldPiece.type = 'bishop';
+          break;
+      }
+
+      this.sendGameMove(this.gameMove);
+      this.togglePromote();
+    },
     doGameMove: function doGameMove(gameMove) {
       var _this4 = this;
 
@@ -2398,282 +2449,6 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         this.handleWin(attacker);
       }
     },
-    checkKingIsChecked: function checkKingIsChecked() {
-      var king, kingType, check, positions, checkMateCount, _i, _positions, position;
-
-      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function checkKingIsChecked$(_context) {
-        while (1) {
-          switch (_context.prev = _context.next) {
-            case 0:
-              kingType = this.player1 === this.user.id ? 'white' : 'black';
-              king = this.board.reduce(function (a, b) {
-                return a.concat(b);
-              }).filter(function (row) {
-                return row.type === 'king' && row.colour === kingType;
-              })[0];
-              _context.next = 4;
-              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkKingTiles({
-                position: king.position,
-                colour: king.colour
-              }));
-
-            case 4:
-              check = _context.sent;
-              positions = [{
-                x: king.position.x - 1,
-                y: king.position.y - 1
-              }, {
-                x: king.position.x,
-                y: king.position.y - 1
-              }, {
-                x: king.position.x + 1,
-                y: king.position.y - 1
-              }, {
-                x: king.position.x + 1,
-                y: king.position.y
-              }, {
-                x: king.position.x + 1,
-                y: king.position.y + 1
-              }, {
-                x: king.position.x,
-                y: king.position.y + 1
-              }, {
-                x: king.position.x - 1,
-                y: king.position.y + 1
-              }, {
-                x: king.position.x - 1,
-                y: king.position.y
-              }];
-              checkMateCount = 0;
-              _i = 0, _positions = positions;
-
-            case 8:
-              if (!(_i < _positions.length)) {
-                _context.next = 19;
-                break;
-              }
-
-              position = _positions[_i];
-
-              if (!(position.x > 7 || position.y > 7 || position.x < 0 || position.y < 0)) {
-                _context.next = 12;
-                break;
-              }
-
-              return _context.abrupt("continue", 16);
-
-            case 12:
-              _context.next = 14;
-              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkKingTiles({
-                position: position,
-                colour: king.colour
-              }));
-
-            case 14:
-              if (!_context.sent) {
-                _context.next = 16;
-                break;
-              }
-
-              checkMateCount++;
-
-            case 16:
-              _i++;
-              _context.next = 8;
-              break;
-
-            case 19:
-              if (checkMateCount === 8) {
-                alert("Check Mate");
-              }
-
-              this.isChecked = check;
-              console.log('check: ', check);
-
-            case 22:
-            case "end":
-              return _context.stop();
-          }
-        }
-      }, null, this);
-    },
-    checkKingTiles: function checkKingTiles(tileData) {
-      var _this5 = this;
-
-      return new Promise(function _callee(resolve, reject) {
-        var diagonalMoves, axisMoves, count, king, _count, _king, knightPositions, i, pawns, _i2, _i3;
-
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function _callee$(_context2) {
-          while (1) {
-            switch (_context2.prev = _context2.next) {
-              case 0:
-                _context2.next = 2;
-                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(_this5.checkDiagonal(tileData));
-
-              case 2:
-                diagonalMoves = _context2.sent;
-                diagonalMoves = diagonalMoves.filter(function (e) {
-                  return e.type !== 'empty';
-                });
-                _context2.next = 6;
-                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(_this5.checkAxis(tileData));
-
-              case 6:
-                axisMoves = _context2.sent;
-                axisMoves = axisMoves.filter(function (e) {
-                  return e.type !== 'empty';
-                });
-                console.log('diagonalMoves: ', diagonalMoves);
-                console.log('axisMoves: ', axisMoves); // Check if any diagonal pieces can kill the king
-
-                if (diagonalMoves.length > 0) {
-                  count = 0;
-                  king = diagonalMoves.filter(function (e) {
-                    return e.type === 'king';
-                  })[0];
-
-                  if (king !== undefined) {
-                    console.log('found king: ', king);
-
-                    if (king.distance === 1) {
-                      resolve(true);
-                    }
-                  }
-
-                  count += diagonalMoves.filter(function (e) {
-                    return e.type === 'queen';
-                  }).length;
-                  count += diagonalMoves.filter(function (e) {
-                    return e.type === 'bishop';
-                  }).length;
-
-                  if (count > 0) {
-                    resolve(true);
-                  }
-                } // Check if anything from the sides can kill the king
-
-
-                if (axisMoves.length > 0) {
-                  _count = 0;
-                  _king = axisMoves.filter(function (e) {
-                    return e.type === 'king';
-                  })[0];
-
-                  if (_king !== undefined) {
-                    console.log('found king: ', _king);
-
-                    if (_king.distance === 1) {
-                      resolve(true);
-                    }
-                  }
-
-                  _count += axisMoves.filter(function (e) {
-                    return e.type === 'queen';
-                  }).length;
-                  _count += axisMoves.filter(function (e) {
-                    return e.type === 'rook';
-                  }).length;
-
-                  if (_count > 0) {
-                    resolve(true);
-                  }
-                } // Check if there is a knight that can jump on king
-
-
-                knightPositions = [{
-                  y: tileData.position.y - 1,
-                  x: tileData.position.x - 2
-                }, {
-                  y: tileData.position.y + 1,
-                  x: tileData.position.x - 2
-                }, {
-                  y: tileData.position.y - 2,
-                  x: tileData.position.x - 1
-                }, {
-                  y: tileData.position.y - 2,
-                  x: tileData.position.x + 1
-                }, {
-                  y: tileData.position.y - 1,
-                  x: tileData.position.x + 2
-                }, {
-                  y: tileData.position.y + 1,
-                  x: tileData.position.x + 2
-                }, {
-                  y: tileData.position.y + 2,
-                  x: tileData.position.x + 1
-                }, {
-                  y: tileData.position.y + 2,
-                  x: tileData.position.x - 1
-                }];
-                i = 0;
-
-              case 14:
-                if (!(i < knightPositions.length)) {
-                  _context2.next = 21;
-                  break;
-                }
-
-                if (!(knightPositions[i].y > 7 || knightPositions[i].x > 7 || knightPositions[i].y < 0 || knightPositions[i].x < 0)) {
-                  _context2.next = 17;
-                  break;
-                }
-
-                return _context2.abrupt("continue", 18);
-
-              case 17:
-                if (_this5.board[knightPositions[i].y][knightPositions[i].x].type === 'knight') {
-                  resolve(true);
-                }
-
-              case 18:
-                i++;
-                _context2.next = 14;
-                break;
-
-              case 21:
-                // Check if there are any pawns
-                pawns = axisMoves.filter(function (e) {
-                  return e.type === 'pawn';
-                });
-
-                if (pawns.length > 0) {
-                  if (_this5.player1 === _this5.user.id) {
-                    for (_i2 = 0; _i2 < pawns.length; _i2++) {
-                      if (pawns[_i2].position === {
-                        x: tileData.position.x - 1,
-                        y: tileData.position.y - 1
-                      } || pawns[_i2].position === {
-                        x: tileData.position.x + 1,
-                        y: tileData.position.y - 1
-                      }) {
-                        resolve(true);
-                      }
-                    }
-                  } else {
-                    for (_i3 = 0; _i3 < pawns.length; _i3++) {
-                      if (pawns[_i3].position === {
-                        x: tileData.position.x + 1,
-                        y: tileData.position.y + 1
-                      } || pawns[_i3].position === {
-                        x: tileData.position.x - 1,
-                        y: tileData.position.y + 1
-                      }) {
-                        resolve(true);
-                      }
-                    }
-                  }
-                }
-
-                resolve(false);
-
-              case 24:
-              case "end":
-                return _context2.stop();
-            }
-          }
-        });
-      });
-    },
     handleWin: function handleWin(attacker) {},
 
     /*
@@ -2685,18 +2460,18 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       }).length > 0;
     },
     checkPossibleMoves: function checkPossibleMoves(tileData) {
-      var possibleMoves, diagonalMoves, axisMoves, knightPositions, i, kingPositions, _i4, pawnPositions, _i5;
+      var possibleMoves, diagonalMoves, axisMoves, knightPositions, i, kingPositions, _i, pawnPositions, _i2;
 
-      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function checkPossibleMoves$(_context3) {
+      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function checkPossibleMoves$(_context) {
         while (1) {
-          switch (_context3.prev = _context3.next) {
+          switch (_context.prev = _context.next) {
             case 0:
               possibleMoves = [];
               diagonalMoves = [];
               axisMoves = [];
               console.log('tileData: ', tileData);
-              _context3.t0 = tileData.type;
-              _context3.next = _context3.t0 === "knight" ? 7 : _context3.t0 === "queen" ? 17 : _context3.t0 === "rook" ? 26 : _context3.t0 === "bishop" ? 31 : _context3.t0 === "king" ? 36 : 46;
+              _context.t0 = tileData.type;
+              _context.next = _context.t0 === "knight" ? 7 : _context.t0 === "queen" ? 17 : _context.t0 === "rook" ? 26 : _context.t0 === "bishop" ? 31 : _context.t0 === "king" ? 36 : 46;
               break;
 
             case 7:
@@ -2729,16 +2504,16 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
             case 9:
               if (!(i < knightPositions.length)) {
-                _context3.next = 16;
+                _context.next = 16;
                 break;
               }
 
               if (!(knightPositions[i].y < 0 || knightPositions[i].x < 0 || knightPositions[i].y > 7 || knightPositions[i].x > 7)) {
-                _context3.next = 12;
+                _context.next = 12;
                 break;
               }
 
-              return _context3.abrupt("continue", 13);
+              return _context.abrupt("continue", 13);
 
             case 12:
               if (this.board[knightPositions[i].y][knightPositions[i].x].colour !== tileData.colour || this.board[knightPositions[i].y][knightPositions[i].x].type === "empty") {
@@ -2747,23 +2522,23 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
             case 13:
               i++;
-              _context3.next = 9;
+              _context.next = 9;
               break;
 
             case 16:
-              return _context3.abrupt("break", 57);
+              return _context.abrupt("break", 57);
 
             case 17:
-              _context3.next = 19;
+              _context.next = 19;
               return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkDiagonal(tileData));
 
             case 19:
-              diagonalMoves = _context3.sent;
-              _context3.next = 22;
+              diagonalMoves = _context.sent;
+              _context.next = 22;
               return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkAxis(tileData));
 
             case 22:
-              axisMoves = _context3.sent;
+              axisMoves = _context.sent;
 
               if (diagonalMoves.length > 0) {
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(diagonalMoves));
@@ -2773,33 +2548,33 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(axisMoves));
               }
 
-              return _context3.abrupt("break", 57);
+              return _context.abrupt("break", 57);
 
             case 26:
-              _context3.next = 28;
+              _context.next = 28;
               return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkAxis(tileData));
 
             case 28:
-              axisMoves = _context3.sent;
+              axisMoves = _context.sent;
 
               if (axisMoves.length > 0) {
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(axisMoves));
               }
 
-              return _context3.abrupt("break", 57);
+              return _context.abrupt("break", 57);
 
             case 31:
-              _context3.next = 33;
+              _context.next = 33;
               return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkDiagonal(tileData));
 
             case 33:
-              diagonalMoves = _context3.sent;
+              diagonalMoves = _context.sent;
 
               if (diagonalMoves.length > 0) {
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(diagonalMoves));
               }
 
-              return _context3.abrupt("break", 57);
+              return _context.abrupt("break", 57);
 
             case 36:
               kingPositions = [{
@@ -2827,33 +2602,33 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 y: tileData.position.y,
                 x: tileData.position.x - 1
               }];
-              _i4 = 0;
+              _i = 0;
 
             case 38:
-              if (!(_i4 < kingPositions.length)) {
-                _context3.next = 45;
+              if (!(_i < kingPositions.length)) {
+                _context.next = 45;
                 break;
               }
 
-              if (!(kingPositions[_i4].y < 0 || kingPositions[_i4].x < 0 || kingPositions[_i4].y > 7 || kingPositions[_i4].x > 7)) {
-                _context3.next = 41;
+              if (!(kingPositions[_i].y < 0 || kingPositions[_i].x < 0 || kingPositions[_i].y > 7 || kingPositions[_i].x > 7)) {
+                _context.next = 41;
                 break;
               }
 
-              return _context3.abrupt("continue", 42);
+              return _context.abrupt("continue", 42);
 
             case 41:
-              if (this.board[kingPositions[_i4].y][kingPositions[_i4].x].colour !== tileData.colour) {
-                possibleMoves.push(kingPositions[_i4]);
+              if (this.board[kingPositions[_i].y][kingPositions[_i].x].colour !== tileData.colour) {
+                possibleMoves.push(kingPositions[_i]);
               }
 
             case 42:
-              _i4++;
-              _context3.next = 38;
+              _i++;
+              _context.next = 38;
               break;
 
             case 45:
-              return _context3.abrupt("break", 57);
+              return _context.abrupt("break", 57);
 
             case 46:
               pawnPositions = [];
@@ -2924,68 +2699,68 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 }
               }
 
-              _i5 = 0;
+              _i2 = 0;
 
             case 49:
-              if (!(_i5 < pawnPositions.length)) {
-                _context3.next = 56;
+              if (!(_i2 < pawnPositions.length)) {
+                _context.next = 56;
                 break;
               }
 
-              if (!(pawnPositions[_i5].y < 0 || pawnPositions[_i5].x < 0 || pawnPositions[_i5].y > 7 || pawnPositions[_i5].x > 7)) {
-                _context3.next = 52;
+              if (!(pawnPositions[_i2].y < 0 || pawnPositions[_i2].x < 0 || pawnPositions[_i2].y > 7 || pawnPositions[_i2].x > 7)) {
+                _context.next = 52;
                 break;
               }
 
-              return _context3.abrupt("continue", 53);
+              return _context.abrupt("continue", 53);
 
             case 52:
-              if (this.board[pawnPositions[_i5].y][pawnPositions[_i5].x].colour !== tileData.colour) {
-                possibleMoves.push(pawnPositions[_i5]);
+              if (this.board[pawnPositions[_i2].y][pawnPositions[_i2].x].colour !== tileData.colour) {
+                possibleMoves.push(pawnPositions[_i2]);
               }
 
             case 53:
-              _i5++;
-              _context3.next = 49;
+              _i2++;
+              _context.next = 49;
               break;
 
             case 56:
-              return _context3.abrupt("break", 57);
+              return _context.abrupt("break", 57);
 
             case 57:
               this.possibleMoves = possibleMoves;
 
             case 58:
             case "end":
-              return _context3.stop();
+              return _context.stop();
           }
         }
       }, null, this);
     },
     checkDiagonal: function checkDiagonal(tileData) {
-      var _this6 = this;
+      var _this5 = this;
 
       console.log('diagonalTile: ', tileData);
       return new Promise(function (resolve) {
         var possibleMoves = [];
         var edgePositions = [{
-          x: _this6.convertNumber(tileData.position.x - tileData.position.y),
-          y: _this6.convertNumber(tileData.position.y - tileData.position.x)
+          x: _this5.convertNumber(tileData.position.x - tileData.position.y),
+          y: _this5.convertNumber(tileData.position.y - tileData.position.x)
         }, {
-          x: _this6.convertNumber(tileData.position.x + tileData.position.y),
-          y: _this6.convertNumber(tileData.position.x - (7 - tileData.position.y))
+          x: _this5.convertNumber(tileData.position.x + tileData.position.y),
+          y: _this5.convertNumber(tileData.position.x - (7 - tileData.position.y))
         }, {
-          x: _this6.convertNumber(tileData.position.x + (7 - tileData.position.y)),
-          y: _this6.convertNumber(tileData.position.y + (7 - tileData.position.x))
+          x: _this5.convertNumber(tileData.position.x + (7 - tileData.position.y)),
+          y: _this5.convertNumber(tileData.position.y + (7 - tileData.position.x))
         }, {
-          x: _this6.convertNumber(tileData.position.x + tileData.position.y - 7),
-          y: _this6.convertNumber(tileData.position.x + tileData.position.y)
+          x: _this5.convertNumber(tileData.position.x + tileData.position.y - 7),
+          y: _this5.convertNumber(tileData.position.x + tileData.position.y)
         }];
 
         for (var i = 0; i < edgePositions.length; i++) {
           var angle = Math.atan2(edgePositions[i].y - tileData.position.y, edgePositions[i].x - tileData.position.x) * 180 / Math.PI;
           var distance = Math.floor(Math.sqrt(Math.pow(tileData.position.x - edgePositions[i].x, 2) + Math.pow(tileData.position.y - edgePositions[i].y, 2)));
-          possibleMoves.push.apply(possibleMoves, _toConsumableArray(_this6.checkDiagonalJump(angle, distance, tileData)));
+          possibleMoves.push.apply(possibleMoves, _toConsumableArray(_this5.checkDiagonalJump(angle, distance, tileData)));
         }
 
         resolve(possibleMoves);
@@ -3050,7 +2825,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       return possibleMoves;
     },
     checkAxis: function checkAxis(tileData) {
-      var _this7 = this;
+      var _this6 = this;
 
       return new Promise(function (resolve) {
         var possibleMoves = [];
@@ -3059,7 +2834,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
         for (var i = position.x - 1; i >= 0; i--) {
           distance++;
-          var tile = _this7.board[position.y][i];
+          var tile = _this6.board[position.y][i];
 
           if (tile.type !== 'empty') {
             if (tile.colour !== tileData.colour) {
@@ -3084,9 +2859,9 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
         distance = 0;
 
-        for (var _i6 = position.x + 1; _i6 <= 7; _i6++) {
+        for (var _i3 = position.x + 1; _i3 <= 7; _i3++) {
           distance++;
-          var _tile = _this7.board[position.y][_i6];
+          var _tile = _this6.board[position.y][_i3];
 
           if (_tile.type !== 'empty') {
             if (_tile.colour !== tileData.colour) {
@@ -3111,9 +2886,9 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
         distance = 0;
 
-        for (var _i7 = position.y - 1; _i7 >= 0; _i7--) {
+        for (var _i4 = position.y - 1; _i4 >= 0; _i4--) {
           distance++;
-          var _tile2 = _this7.board[_i7][position.x];
+          var _tile2 = _this6.board[_i4][position.x];
 
           if (_tile2.type !== 'empty') {
             if (_tile2.colour !== tileData.colour) {
@@ -3138,9 +2913,9 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
         distance = 0;
 
-        for (var _i8 = position.y + 1; _i8 <= 7; _i8++) {
+        for (var _i5 = position.y + 1; _i5 <= 7; _i5++) {
           distance++;
-          var _tile3 = _this7.board[_i8][position.x];
+          var _tile3 = _this6.board[_i5][position.x];
 
           if (_tile3.type !== 'empty') {
             if (_tile3.colour !== tileData.colour) {
@@ -3168,6 +2943,276 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
     },
     emptyPossibleMoves: function emptyPossibleMoves() {
       this.possibleMoves = [];
+    },
+    checkKingIsChecked: function checkKingIsChecked() {
+      var king, kingType, check, positions, checkMateCount, _i6, _positions, position;
+
+      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function checkKingIsChecked$(_context2) {
+        while (1) {
+          switch (_context2.prev = _context2.next) {
+            case 0:
+              kingType = this.player1 === this.user.id ? 'white' : 'black';
+              king = this.board.reduce(function (a, b) {
+                return a.concat(b);
+              }).filter(function (row) {
+                return row.type === 'king' && row.colour === kingType;
+              })[0];
+              _context2.next = 4;
+              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkKingTiles({
+                position: king.position,
+                colour: king.colour
+              }));
+
+            case 4:
+              check = _context2.sent;
+              positions = [{
+                x: king.position.x - 1,
+                y: king.position.y - 1
+              }, {
+                x: king.position.x,
+                y: king.position.y - 1
+              }, {
+                x: king.position.x + 1,
+                y: king.position.y - 1
+              }, {
+                x: king.position.x + 1,
+                y: king.position.y
+              }, {
+                x: king.position.x + 1,
+                y: king.position.y + 1
+              }, {
+                x: king.position.x,
+                y: king.position.y + 1
+              }, {
+                x: king.position.x - 1,
+                y: king.position.y + 1
+              }, {
+                x: king.position.x - 1,
+                y: king.position.y
+              }];
+              checkMateCount = 0;
+              _i6 = 0, _positions = positions;
+
+            case 8:
+              if (!(_i6 < _positions.length)) {
+                _context2.next = 19;
+                break;
+              }
+
+              position = _positions[_i6];
+
+              if (!(position.x > 7 || position.y > 7 || position.x < 0 || position.y < 0)) {
+                _context2.next = 12;
+                break;
+              }
+
+              return _context2.abrupt("continue", 16);
+
+            case 12:
+              _context2.next = 14;
+              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkKingTiles({
+                position: position,
+                colour: king.colour
+              }));
+
+            case 14:
+              if (!_context2.sent) {
+                _context2.next = 16;
+                break;
+              }
+
+              checkMateCount++;
+
+            case 16:
+              _i6++;
+              _context2.next = 8;
+              break;
+
+            case 19:
+              if (checkMateCount === 8) {
+                alert("Check Mate");
+              }
+
+              this.isChecked = check;
+              console.log('check: ', check);
+
+            case 22:
+            case "end":
+              return _context2.stop();
+          }
+        }
+      }, null, this);
+    },
+    checkKingTiles: function checkKingTiles(tileData) {
+      var _this7 = this;
+
+      return new Promise(function _callee(resolve, reject) {
+        var diagonalMoves, axisMoves, count, king, _count, _king, knightPositions, i, pawns, _i7, _i8;
+
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function _callee$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                _context3.next = 2;
+                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(_this7.checkDiagonal(tileData));
+
+              case 2:
+                diagonalMoves = _context3.sent;
+                diagonalMoves = diagonalMoves.filter(function (e) {
+                  return e.type !== 'empty';
+                });
+                _context3.next = 6;
+                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(_this7.checkAxis(tileData));
+
+              case 6:
+                axisMoves = _context3.sent;
+                axisMoves = axisMoves.filter(function (e) {
+                  return e.type !== 'empty';
+                }); // Check if any diagonal pieces can kill the king
+
+                if (diagonalMoves.length > 0) {
+                  count = 0;
+                  king = diagonalMoves.filter(function (e) {
+                    return e.type === 'king';
+                  })[0];
+
+                  if (king !== undefined) {
+                    if (king.distance === 1) {
+                      resolve(true);
+                    }
+                  }
+
+                  count += diagonalMoves.filter(function (e) {
+                    return e.type === 'queen';
+                  }).length;
+                  count += diagonalMoves.filter(function (e) {
+                    return e.type === 'bishop';
+                  }).length;
+
+                  if (count > 0) {
+                    resolve(true);
+                  }
+                } // Check if anything from the sides can kill the king
+
+
+                if (axisMoves.length > 0) {
+                  _count = 0;
+                  _king = axisMoves.filter(function (e) {
+                    return e.type === 'king';
+                  })[0];
+
+                  if (_king !== undefined) {
+                    if (_king.distance === 1) {
+                      resolve(true);
+                    }
+                  }
+
+                  _count += axisMoves.filter(function (e) {
+                    return e.type === 'queen';
+                  }).length;
+                  _count += axisMoves.filter(function (e) {
+                    return e.type === 'rook';
+                  }).length;
+
+                  if (_count > 0) {
+                    resolve(true);
+                  }
+                } // Check if there is a knight that can jump on king
+
+
+                knightPositions = [{
+                  y: tileData.position.y - 1,
+                  x: tileData.position.x - 2
+                }, {
+                  y: tileData.position.y + 1,
+                  x: tileData.position.x - 2
+                }, {
+                  y: tileData.position.y - 2,
+                  x: tileData.position.x - 1
+                }, {
+                  y: tileData.position.y - 2,
+                  x: tileData.position.x + 1
+                }, {
+                  y: tileData.position.y - 1,
+                  x: tileData.position.x + 2
+                }, {
+                  y: tileData.position.y + 1,
+                  x: tileData.position.x + 2
+                }, {
+                  y: tileData.position.y + 2,
+                  x: tileData.position.x + 1
+                }, {
+                  y: tileData.position.y + 2,
+                  x: tileData.position.x - 1
+                }];
+                i = 0;
+
+              case 12:
+                if (!(i < knightPositions.length)) {
+                  _context3.next = 19;
+                  break;
+                }
+
+                if (!(knightPositions[i].y > 7 || knightPositions[i].x > 7 || knightPositions[i].y < 0 || knightPositions[i].x < 0)) {
+                  _context3.next = 15;
+                  break;
+                }
+
+                return _context3.abrupt("continue", 16);
+
+              case 15:
+                if (_this7.board[knightPositions[i].y][knightPositions[i].x].type === 'knight') {
+                  resolve(true);
+                }
+
+              case 16:
+                i++;
+                _context3.next = 12;
+                break;
+
+              case 19:
+                // Check if there are any pawns
+                pawns = axisMoves.filter(function (e) {
+                  return e.type === 'pawn';
+                });
+
+                if (pawns.length > 0) {
+                  if (_this7.player1 === _this7.user.id) {
+                    for (_i7 = 0; _i7 < pawns.length; _i7++) {
+                      if (pawns[_i7].position === {
+                        x: tileData.position.x - 1,
+                        y: tileData.position.y - 1
+                      } || pawns[_i7].position === {
+                        x: tileData.position.x + 1,
+                        y: tileData.position.y - 1
+                      }) {
+                        resolve(true);
+                      }
+                    }
+                  } else {
+                    for (_i8 = 0; _i8 < pawns.length; _i8++) {
+                      if (pawns[_i8].position === {
+                        x: tileData.position.x + 1,
+                        y: tileData.position.y + 1
+                      } || pawns[_i8].position === {
+                        x: tileData.position.x - 1,
+                        y: tileData.position.y + 1
+                      }) {
+                        resolve(true);
+                      }
+                    }
+                  }
+                }
+
+                resolve(false);
+
+              case 22:
+              case "end":
+                return _context3.stop();
+            }
+          }
+        });
+      });
     },
 
     /*
@@ -4026,23 +4071,29 @@ __webpack_require__.r(__webpack_exports__);
     },
     handleDrop: function handleDrop(e, tileData) {
       e.preventDefault();
-      console.log('dropData: ', tileData);
       var oldPiece = JSON.parse(e.dataTransfer.getData('text'));
       console.log('payloadData: ', oldPiece); // If this tile has been marked as a possible target continue the logic
 
       if (this.possibleTarget) {
-        console.log('could drop here: ');
-        this.$emit('sendGameMove', {
-          oldPiece: oldPiece,
-          newPiece: this.tileData
-        });
+        if (oldPiece.type === 'pawn' && (this.tileData.position.y === 7 || this.tileData.position.y === 0)) {
+          console.log('promoting: ');
+          this.$emit('togglePromote', {
+            oldPiece: oldPiece,
+            newPiece: this.tileData
+          });
+        } else {
+          console.log('normal move: ');
+          this.$emit('sendGameMove', {
+            oldPiece: oldPiece,
+            newPiece: this.tileData
+          });
+        }
       }
 
       this.removeHighlight();
     },
     handleDragStart: function handleDragStart(e, tileData) {
       if (this.canDrag) {
-        console.log('dragStart: ', tileData);
         e.dataTransfer.setData('text/plain', JSON.stringify(tileData));
         this.highlightMoves(tileData);
       } else {
@@ -47243,6 +47294,7 @@ var render = function() {
                   on: {
                     checkPossibleMoves: _vm.checkPossibleMoves,
                     emptyPossibleMoves: _vm.emptyPossibleMoves,
+                    togglePromote: _vm.togglePromote,
                     sendGameMove: _vm.sendGameMove
                   }
                 })
@@ -47267,6 +47319,50 @@ var render = function() {
             },
             [_vm._v("Start Game")]
           )
+        ])
+      : _vm._e(),
+    _vm._v(" "),
+    _vm.isPromoting && _vm.gameMove !== null
+      ? _c("div", { staticClass: "promote" }, [
+          _c("h2", [_vm._v("Select piece to promote")]),
+          _vm._v(" "),
+          _c("div", { staticClass: "promote-type" }, [
+            _c("img", {
+              attrs: { src: _vm.getPieceImage("queen"), alt: "" },
+              on: {
+                click: function($event) {
+                  return _vm.promote("queen")
+                }
+              }
+            }),
+            _vm._v(" "),
+            _c("img", {
+              attrs: { src: _vm.getPieceImage("knight"), alt: "" },
+              on: {
+                click: function($event) {
+                  return _vm.promote("knight")
+                }
+              }
+            }),
+            _vm._v(" "),
+            _c("img", {
+              attrs: { src: _vm.getPieceImage("rook"), alt: "" },
+              on: {
+                click: function($event) {
+                  return _vm.promote("rook")
+                }
+              }
+            }),
+            _vm._v(" "),
+            _c("img", {
+              attrs: { src: _vm.getPieceImage("bishop"), alt: "" },
+              on: {
+                click: function($event) {
+                  return _vm.promote("bishop")
+                }
+              }
+            })
+          ])
         ])
       : _vm._e()
   ])

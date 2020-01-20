@@ -62,17 +62,25 @@
 
             handleDrop(e, tileData) {
                 e.preventDefault();
-                console.log('dropData: ', tileData);
                 let oldPiece = JSON.parse(e.dataTransfer.getData('text'));
                 console.log('payloadData: ', oldPiece);
 
                 // If this tile has been marked as a possible target continue the logic
                 if (this.possibleTarget) {
-                    console.log('could drop here: ', );
-                    this.$emit('sendGameMove', {
-                        oldPiece: oldPiece,
-                        newPiece: this.tileData,
-                    });
+                    if (oldPiece.type === 'pawn' && (this.tileData.position.y === 7 || this.tileData.position.y === 0)) {
+                        console.log('promoting: ', );
+                        this.$emit('togglePromote', {
+                            oldPiece: oldPiece,
+                            newPiece: this.tileData,
+                        });
+                    } else {
+                        console.log('normal move: ', );
+                        this.$emit('sendGameMove', {
+                            oldPiece: oldPiece,
+                            newPiece: this.tileData,
+                        });
+                    }
+
                 }
 
                 this.removeHighlight();
@@ -80,7 +88,6 @@
 
             handleDragStart(e, tileData) {
                 if (this.canDrag) {
-                    console.log('dragStart: ', tileData);
                     e.dataTransfer.setData('text/plain', JSON.stringify(tileData));
                     this.highlightMoves(tileData);
                 } else {
