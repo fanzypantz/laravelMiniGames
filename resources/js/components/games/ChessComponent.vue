@@ -193,7 +193,6 @@
 
                     // Check if the game was won before changing the turn
                     this.checkIfKing(newPiece.type, this.turn);
-                    this.checkKingIsChecked();
 
                     if (this.turn === this.user.id) {
                         let opponent = this.getOpponentUser();
@@ -203,6 +202,9 @@
                         console.log('my turn: ',);
                         this.turn = this.user.id;
                     }
+
+                    // Check if king has been put in check or checkmate
+                    this.checkKingIsChecked();
 
                     resolve(true);
                 });
@@ -218,9 +220,8 @@
                 let king;
                 let kingType = this.player1 === this.user.id ? 'white' : 'black';
                 king = this.board.reduce(function (a, b) {
-                    return a.concat(b);
-                })
-                    .filter((row) => {
+                        return a.concat(b);
+                    }).filter((row) => {
                         return row.type === 'king' && row.colour === kingType;
                     })[0];
 
@@ -228,6 +229,59 @@
                     position: king.position,
                     colour: king.colour,
                 });
+
+                let positions = [
+                    {
+                        x: king.position.x - 1,
+                        y: king.position.y - 1
+                    },
+                    {
+                        x: king.position.x,
+                        y: king.position.y - 1
+                    },
+                    {
+                        x: king.position.x + 1,
+                        y: king.position.y - 1
+                    },
+                    {
+                        x: king.position.x + 1,
+                        y: king.position.y
+                    },
+                    {
+                        x: king.position.x + 1,
+                        y: king.position.y + 1
+                    },
+                    {
+                        x: king.position.x,
+                        y: king.position.y + 1
+                    },
+                    {
+                        x: king.position.x - 1,
+                        y: king.position.y + 1
+                    },
+                    {
+                        x: king.position.x - 1,
+                        y: king.position.y
+                    },
+                ];
+
+                let checkMateCount = 0;
+                for (const position of positions) {
+                    if (position.x > 7 || position.y > 7 || position.x < 0 || position.y < 0) {
+                        continue;
+                    }
+                    // If the tile around the king will also be check, add to the count
+                    if (await this.checkKingTiles({
+                        position: position,
+                        colour: king.colour
+                    })){
+                        checkMateCount++;
+                    }
+                }
+
+                if (checkMateCount === 8) {
+                    alert("Check Mate")
+                }
 
                 this.isChecked = check;
                 console.log('check: ', check);
@@ -636,9 +690,9 @@
                 .listen('GameMoveEvent', (event) => {
                     this.doGameMove(event.move);
                 }).listen('GameMessageEvent', (event) => {
-                console.log('new game message: ', event.message);
-                this.addGameMessage(event.message);
-            });
+                    console.log('new game message: ', event.message);
+                    this.addGameMessage(event.message);
+                });
         }
     }
 </script>

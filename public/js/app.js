@@ -2377,8 +2377,6 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
         _this4.checkIfKing(newPiece.type, _this4.turn);
 
-        _this4.checkKingIsChecked();
-
         if (_this4.turn === _this4.user.id) {
           var opponent = _this4.getOpponentUser();
 
@@ -2387,7 +2385,10 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         } else {
           console.log('my turn: ');
           _this4.turn = _this4.user.id;
-        }
+        } // Check if king has been put in check or checkmate
+
+
+        _this4.checkKingIsChecked();
 
         resolve(true);
       });
@@ -2398,7 +2399,8 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       }
     },
     checkKingIsChecked: function checkKingIsChecked() {
-      var king, kingType, check;
+      var king, kingType, check, positions, checkMateCount, _i, _positions, position;
+
       return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function checkKingIsChecked$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
@@ -2417,10 +2419,78 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
             case 4:
               check = _context.sent;
+              positions = [{
+                x: king.position.x - 1,
+                y: king.position.y - 1
+              }, {
+                x: king.position.x,
+                y: king.position.y - 1
+              }, {
+                x: king.position.x + 1,
+                y: king.position.y - 1
+              }, {
+                x: king.position.x + 1,
+                y: king.position.y
+              }, {
+                x: king.position.x + 1,
+                y: king.position.y + 1
+              }, {
+                x: king.position.x,
+                y: king.position.y + 1
+              }, {
+                x: king.position.x - 1,
+                y: king.position.y + 1
+              }, {
+                x: king.position.x - 1,
+                y: king.position.y
+              }];
+              checkMateCount = 0;
+              _i = 0, _positions = positions;
+
+            case 8:
+              if (!(_i < _positions.length)) {
+                _context.next = 19;
+                break;
+              }
+
+              position = _positions[_i];
+
+              if (!(position.x > 7 || position.y > 7 || position.x < 0 || position.y < 0)) {
+                _context.next = 12;
+                break;
+              }
+
+              return _context.abrupt("continue", 16);
+
+            case 12:
+              _context.next = 14;
+              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkKingTiles({
+                position: position,
+                colour: king.colour
+              }));
+
+            case 14:
+              if (!_context.sent) {
+                _context.next = 16;
+                break;
+              }
+
+              checkMateCount++;
+
+            case 16:
+              _i++;
+              _context.next = 8;
+              break;
+
+            case 19:
+              if (checkMateCount === 8) {
+                alert("Check Mate");
+              }
+
               this.isChecked = check;
               console.log('check: ', check);
 
-            case 7:
+            case 22:
             case "end":
               return _context.stop();
           }
@@ -2431,7 +2501,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       var _this5 = this;
 
       return new Promise(function _callee(resolve, reject) {
-        var diagonalMoves, axisMoves, count, king, _count, _king, knightPositions, i, pawns, _i, _i2;
+        var diagonalMoves, axisMoves, count, king, _count, _king, knightPositions, i, pawns, _i2, _i3;
 
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function _callee$(_context2) {
           while (1) {
@@ -2568,11 +2638,11 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
                 if (pawns.length > 0) {
                   if (_this5.player1 === _this5.user.id) {
-                    for (_i = 0; _i < pawns.length; _i++) {
-                      if (pawns[_i].position === {
+                    for (_i2 = 0; _i2 < pawns.length; _i2++) {
+                      if (pawns[_i2].position === {
                         x: tileData.position.x - 1,
                         y: tileData.position.y - 1
-                      } || pawns[_i].position === {
+                      } || pawns[_i2].position === {
                         x: tileData.position.x + 1,
                         y: tileData.position.y - 1
                       }) {
@@ -2580,11 +2650,11 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                       }
                     }
                   } else {
-                    for (_i2 = 0; _i2 < pawns.length; _i2++) {
-                      if (pawns[_i2].position === {
+                    for (_i3 = 0; _i3 < pawns.length; _i3++) {
+                      if (pawns[_i3].position === {
                         x: tileData.position.x + 1,
                         y: tileData.position.y + 1
-                      } || pawns[_i2].position === {
+                      } || pawns[_i3].position === {
                         x: tileData.position.x - 1,
                         y: tileData.position.y + 1
                       }) {
@@ -2615,7 +2685,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       }).length > 0;
     },
     checkPossibleMoves: function checkPossibleMoves(tileData) {
-      var possibleMoves, diagonalMoves, axisMoves, knightPositions, i, kingPositions, _i3, pawnPositions, _i4;
+      var possibleMoves, diagonalMoves, axisMoves, knightPositions, i, kingPositions, _i4, pawnPositions, _i5;
 
       return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function checkPossibleMoves$(_context3) {
         while (1) {
@@ -2757,15 +2827,15 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 y: tileData.position.y,
                 x: tileData.position.x - 1
               }];
-              _i3 = 0;
+              _i4 = 0;
 
             case 38:
-              if (!(_i3 < kingPositions.length)) {
+              if (!(_i4 < kingPositions.length)) {
                 _context3.next = 45;
                 break;
               }
 
-              if (!(kingPositions[_i3].y < 0 || kingPositions[_i3].x < 0 || kingPositions[_i3].y > 7 || kingPositions[_i3].x > 7)) {
+              if (!(kingPositions[_i4].y < 0 || kingPositions[_i4].x < 0 || kingPositions[_i4].y > 7 || kingPositions[_i4].x > 7)) {
                 _context3.next = 41;
                 break;
               }
@@ -2773,12 +2843,12 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
               return _context3.abrupt("continue", 42);
 
             case 41:
-              if (this.board[kingPositions[_i3].y][kingPositions[_i3].x].colour !== tileData.colour) {
-                possibleMoves.push(kingPositions[_i3]);
+              if (this.board[kingPositions[_i4].y][kingPositions[_i4].x].colour !== tileData.colour) {
+                possibleMoves.push(kingPositions[_i4]);
               }
 
             case 42:
-              _i3++;
+              _i4++;
               _context3.next = 38;
               break;
 
@@ -2854,15 +2924,15 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 }
               }
 
-              _i4 = 0;
+              _i5 = 0;
 
             case 49:
-              if (!(_i4 < pawnPositions.length)) {
+              if (!(_i5 < pawnPositions.length)) {
                 _context3.next = 56;
                 break;
               }
 
-              if (!(pawnPositions[_i4].y < 0 || pawnPositions[_i4].x < 0 || pawnPositions[_i4].y > 7 || pawnPositions[_i4].x > 7)) {
+              if (!(pawnPositions[_i5].y < 0 || pawnPositions[_i5].x < 0 || pawnPositions[_i5].y > 7 || pawnPositions[_i5].x > 7)) {
                 _context3.next = 52;
                 break;
               }
@@ -2870,12 +2940,12 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
               return _context3.abrupt("continue", 53);
 
             case 52:
-              if (this.board[pawnPositions[_i4].y][pawnPositions[_i4].x].colour !== tileData.colour) {
-                possibleMoves.push(pawnPositions[_i4]);
+              if (this.board[pawnPositions[_i5].y][pawnPositions[_i5].x].colour !== tileData.colour) {
+                possibleMoves.push(pawnPositions[_i5]);
               }
 
             case 53:
-              _i4++;
+              _i5++;
               _context3.next = 49;
               break;
 
@@ -3014,9 +3084,9 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
         distance = 0;
 
-        for (var _i5 = position.x + 1; _i5 <= 7; _i5++) {
+        for (var _i6 = position.x + 1; _i6 <= 7; _i6++) {
           distance++;
-          var _tile = _this7.board[position.y][_i5];
+          var _tile = _this7.board[position.y][_i6];
 
           if (_tile.type !== 'empty') {
             if (_tile.colour !== tileData.colour) {
@@ -3041,9 +3111,9 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
         distance = 0;
 
-        for (var _i6 = position.y - 1; _i6 >= 0; _i6--) {
+        for (var _i7 = position.y - 1; _i7 >= 0; _i7--) {
           distance++;
-          var _tile2 = _this7.board[_i6][position.x];
+          var _tile2 = _this7.board[_i7][position.x];
 
           if (_tile2.type !== 'empty') {
             if (_tile2.colour !== tileData.colour) {
@@ -3068,9 +3138,9 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
         distance = 0;
 
-        for (var _i7 = position.y + 1; _i7 <= 7; _i7++) {
+        for (var _i8 = position.y + 1; _i8 <= 7; _i8++) {
           distance++;
-          var _tile3 = _this7.board[_i7][position.x];
+          var _tile3 = _this7.board[_i8][position.x];
 
           if (_tile3.type !== 'empty') {
             if (_tile3.colour !== tileData.colour) {
