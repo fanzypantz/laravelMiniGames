@@ -2220,6 +2220,8 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 //
 //
 //
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
@@ -2227,6 +2229,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       board: null,
       turn: null,
       player1: null,
+      isChecked: false,
       possibleMoves: []
     };
   },
@@ -2281,7 +2284,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       return board;
     },
     getDragPermission: function getDragPermission(tile) {
-      return this.turn === this.user.id && tile.type !== 'empty' && (tile.colour === 'white' && this.player1 === this.user.id || tile.colour === 'black' && this.player1 !== this.user.id);
+      return this.turn === this.user.id && tile.type !== 'empty' && (tile.colour === 'white' && this.player1 === this.user.id || tile.colour === 'black' && this.player1 !== this.user.id) && (this.isChecked === false || this.isChecked && tile.type === 'king');
     },
     convertNumber: function convertNumber(number) {
       if (number > 7) {
@@ -2329,9 +2332,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       };
     },
     restartGame: function restartGame() {
-      window.axios.post("/game/restartGame/".concat(this.lobby.url));
-      this.board = null;
-      this.addGameMessage("The game has been reset!");
+      this.initiateGame();
     },
     playerWon: function playerWon(player) {
       console.log('player: ', player.playerNumber, ' won the game!');
@@ -2356,6 +2357,8 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       var _this4 = this;
 
       return new Promise(function (resolve) {
+        // ANIMATIONS HERE
+        // Then set new data
         var gameMoveData = JSON.parse(JSON.stringify(gameMove));
         console.log('gameMoveData: ', gameMoveData);
         var oldPiece = gameMoveData.oldPiece;
@@ -2370,9 +2373,11 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
           oldPiece.isInInitialState = false;
         }
 
-        Vue.set(_this4.board[newPiece.position.y], newPiece.position.x, oldPiece); // ANIMATIONS HERE
+        Vue.set(_this4.board[newPiece.position.y], newPiece.position.x, oldPiece); // Check if the game was won before changing the turn
 
-        _this4.checkKing(newPiece.type, _this4.turn);
+        _this4.checkIfKing(newPiece.type, _this4.turn);
+
+        _this4.checkKingIsChecked();
 
         if (_this4.turn === _this4.user.id) {
           var opponent = _this4.getOpponentUser();
@@ -2387,10 +2392,212 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         resolve(true);
       });
     },
-    checkKing: function checkKing(target, attacker) {
+    checkIfKing: function checkIfKing(target, attacker) {
       if (target === 'king') {
         this.handleWin(attacker);
       }
+    },
+    checkKingIsChecked: function checkKingIsChecked() {
+      var king, kingType, check;
+      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function checkKingIsChecked$(_context) {
+        while (1) {
+          switch (_context.prev = _context.next) {
+            case 0:
+              kingType = this.player1 === this.user.id ? 'white' : 'black';
+              king = this.board.reduce(function (a, b) {
+                return a.concat(b);
+              }).filter(function (row) {
+                return row.type === 'king' && row.colour === kingType;
+              })[0];
+              _context.next = 4;
+              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkKingTiles({
+                position: king.position,
+                colour: king.colour
+              }));
+
+            case 4:
+              check = _context.sent;
+              console.log('check: ', check);
+
+            case 6:
+            case "end":
+              return _context.stop();
+          }
+        }
+      }, null, this);
+    },
+    checkKingTiles: function checkKingTiles(tileData) {
+      var _this5 = this;
+
+      return new Promise(function _callee(resolve, reject) {
+        var diagonalMoves, axisMoves, count, king, _count, _king, knightPositions, i, pawns, _i, _i2;
+
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function _callee$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                _context2.next = 2;
+                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(_this5.checkDiagonal(tileData));
+
+              case 2:
+                diagonalMoves = _context2.sent;
+                diagonalMoves = diagonalMoves.filter(function (e) {
+                  return e.type !== 'empty';
+                });
+                _context2.next = 6;
+                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(_this5.checkAxis(tileData));
+
+              case 6:
+                axisMoves = _context2.sent;
+                axisMoves = axisMoves.filter(function (e) {
+                  return e.type !== 'empty';
+                });
+                console.log('diagonalMoves: ', diagonalMoves);
+                console.log('axisMoves: ', axisMoves); // Check if any diagonal pieces can kill the king
+
+                if (diagonalMoves.length > 0) {
+                  count = 0;
+                  king = diagonalMoves.filter(function (e) {
+                    return e.type === 'king';
+                  })[0];
+
+                  if (king !== undefined) {
+                    if (king.distance === 1) {
+                      resolve(true);
+                    }
+                  }
+
+                  count += diagonalMoves.filter(function (e) {
+                    return e.type === 'queen';
+                  }).length;
+                  count += diagonalMoves.filter(function (e) {
+                    return e.type === 'bishop';
+                  }).length;
+
+                  if (count > 0) {
+                    resolve(true);
+                  }
+                } // Check if anything from the sides can kill the king
+
+
+                if (axisMoves.length > 0) {
+                  _count = 0;
+                  _king = axisMoves.filter(function (e) {
+                    return e.type === 'king';
+                  })[0];
+
+                  if (_king !== undefined) {
+                    if (_king.distance === 1) {
+                      resolve(true);
+                    }
+                  }
+
+                  _count += axisMoves.filter(function (e) {
+                    return e.type === 'queen';
+                  }).length;
+                  _count += axisMoves.filter(function (e) {
+                    return e.type === 'rook';
+                  }).length;
+
+                  if (_count > 0) {
+                    resolve(true);
+                  }
+                } // Check if there is a knight that can jump on king
+
+
+                knightPositions = [{
+                  y: tileData.position.y - 1,
+                  x: tileData.position.x - 2
+                }, {
+                  y: tileData.position.y + 1,
+                  x: tileData.position.x - 2
+                }, {
+                  y: tileData.position.y - 2,
+                  x: tileData.position.x - 1
+                }, {
+                  y: tileData.position.y - 2,
+                  x: tileData.position.x + 1
+                }, {
+                  y: tileData.position.y - 1,
+                  x: tileData.position.x + 2
+                }, {
+                  y: tileData.position.y + 1,
+                  x: tileData.position.x + 2
+                }, {
+                  y: tileData.position.y + 2,
+                  x: tileData.position.x + 1
+                }, {
+                  y: tileData.position.y + 2,
+                  x: tileData.position.x - 1
+                }];
+                i = 0;
+
+              case 14:
+                if (!(i < knightPositions.length)) {
+                  _context2.next = 21;
+                  break;
+                }
+
+                if (!(knightPositions[i].y > 7 || knightPositions[i].x > 7 || knightPositions[i].y < 0 || knightPositions[i].x < 0)) {
+                  _context2.next = 17;
+                  break;
+                }
+
+                return _context2.abrupt("continue", 18);
+
+              case 17:
+                if (_this5.board[knightPositions[i].y][knightPositions[i].y].type === 'knight') {
+                  resolve(true);
+                }
+
+              case 18:
+                i++;
+                _context2.next = 14;
+                break;
+
+              case 21:
+                // Check if there are any pawns
+                pawns = axisMoves.filter(function (e) {
+                  return e.type === 'pawn';
+                });
+
+                if (pawns.length > 0) {
+                  if (_this5.player1 === _this5.user.id) {
+                    for (_i = 0; _i < pawns.length; _i++) {
+                      if (pawns[_i].position === {
+                        x: tileData.position.x - 1,
+                        y: tileData.position.y - 1
+                      } || pawns[_i].position === {
+                        x: tileData.position.x + 1,
+                        y: tileData.position.y - 1
+                      }) {
+                        resolve(true);
+                      }
+                    }
+                  } else {
+                    for (_i2 = 0; _i2 < pawns.length; _i2++) {
+                      if (pawns[_i2].position === {
+                        x: tileData.position.x + 1,
+                        y: tileData.position.y + 1
+                      } || pawns[_i2].position === {
+                        x: tileData.position.x - 1,
+                        y: tileData.position.y + 1
+                      }) {
+                        resolve(true);
+                      }
+                    }
+                  }
+                }
+
+                resolve(false);
+
+              case 24:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        });
+      });
     },
     handleWin: function handleWin(attacker) {},
 
@@ -2403,18 +2610,18 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       }).length > 0;
     },
     checkPossibleMoves: function checkPossibleMoves(tileData) {
-      var possibleMoves, diagonalMoves, axisMoves, knightPositions, i, kingPositions, _i, pawnPositions, _i2;
+      var possibleMoves, diagonalMoves, axisMoves, knightPositions, i, kingPositions, _i3, pawnPositions, _i4;
 
-      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function checkPossibleMoves$(_context) {
+      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function checkPossibleMoves$(_context3) {
         while (1) {
-          switch (_context.prev = _context.next) {
+          switch (_context3.prev = _context3.next) {
             case 0:
               possibleMoves = [];
               diagonalMoves = [];
               axisMoves = [];
               console.log('tileData: ', tileData);
-              _context.t0 = tileData.type;
-              _context.next = _context.t0 === "knight" ? 7 : _context.t0 === "queen" ? 17 : _context.t0 === "rook" ? 26 : _context.t0 === "bishop" ? 31 : _context.t0 === "king" ? 36 : 46;
+              _context3.t0 = tileData.type;
+              _context3.next = _context3.t0 === "knight" ? 7 : _context3.t0 === "queen" ? 17 : _context3.t0 === "rook" ? 26 : _context3.t0 === "bishop" ? 31 : _context3.t0 === "king" ? 36 : 46;
               break;
 
             case 7:
@@ -2447,16 +2654,16 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
             case 9:
               if (!(i < knightPositions.length)) {
-                _context.next = 16;
+                _context3.next = 16;
                 break;
               }
 
               if (!(knightPositions[i].y < 0 || knightPositions[i].x < 0 || knightPositions[i].y > 7 || knightPositions[i].x > 7)) {
-                _context.next = 12;
+                _context3.next = 12;
                 break;
               }
 
-              return _context.abrupt("continue", 13);
+              return _context3.abrupt("continue", 13);
 
             case 12:
               if (this.board[knightPositions[i].y][knightPositions[i].x].colour !== tileData.colour || this.board[knightPositions[i].y][knightPositions[i].x].type === "empty") {
@@ -2465,23 +2672,23 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
             case 13:
               i++;
-              _context.next = 9;
+              _context3.next = 9;
               break;
 
             case 16:
-              return _context.abrupt("break", 57);
+              return _context3.abrupt("break", 57);
 
             case 17:
-              _context.next = 19;
+              _context3.next = 19;
               return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkDiagonal(tileData));
 
             case 19:
-              diagonalMoves = _context.sent;
-              _context.next = 22;
+              diagonalMoves = _context3.sent;
+              _context3.next = 22;
               return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkAxis(tileData));
 
             case 22:
-              axisMoves = _context.sent;
+              axisMoves = _context3.sent;
 
               if (diagonalMoves.length > 0) {
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(diagonalMoves));
@@ -2491,33 +2698,33 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(axisMoves));
               }
 
-              return _context.abrupt("break", 57);
+              return _context3.abrupt("break", 57);
 
             case 26:
-              _context.next = 28;
+              _context3.next = 28;
               return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkAxis(tileData));
 
             case 28:
-              axisMoves = _context.sent;
+              axisMoves = _context3.sent;
 
               if (axisMoves.length > 0) {
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(axisMoves));
               }
 
-              return _context.abrupt("break", 57);
+              return _context3.abrupt("break", 57);
 
             case 31:
-              _context.next = 33;
+              _context3.next = 33;
               return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkDiagonal(tileData));
 
             case 33:
-              diagonalMoves = _context.sent;
+              diagonalMoves = _context3.sent;
 
               if (diagonalMoves.length > 0) {
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(diagonalMoves));
               }
 
-              return _context.abrupt("break", 57);
+              return _context3.abrupt("break", 57);
 
             case 36:
               kingPositions = [{
@@ -2545,33 +2752,33 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 y: tileData.position.y,
                 x: tileData.position.x - 1
               }];
-              _i = 0;
+              _i3 = 0;
 
             case 38:
-              if (!(_i < kingPositions.length)) {
-                _context.next = 45;
+              if (!(_i3 < kingPositions.length)) {
+                _context3.next = 45;
                 break;
               }
 
-              if (!(kingPositions[_i].y < 0 || kingPositions[_i].x < 0 || kingPositions[_i].y > 7 || kingPositions[_i].x > 7)) {
-                _context.next = 41;
+              if (!(kingPositions[_i3].y < 0 || kingPositions[_i3].x < 0 || kingPositions[_i3].y > 7 || kingPositions[_i3].x > 7)) {
+                _context3.next = 41;
                 break;
               }
 
-              return _context.abrupt("continue", 42);
+              return _context3.abrupt("continue", 42);
 
             case 41:
-              if (this.board[kingPositions[_i].y][kingPositions[_i].x].colour !== tileData.colour) {
-                possibleMoves.push(kingPositions[_i]);
+              if (this.board[kingPositions[_i3].y][kingPositions[_i3].x].colour !== tileData.colour) {
+                possibleMoves.push(kingPositions[_i3]);
               }
 
             case 42:
-              _i++;
-              _context.next = 38;
+              _i3++;
+              _context3.next = 38;
               break;
 
             case 45:
-              return _context.abrupt("break", 57);
+              return _context3.abrupt("break", 57);
 
             case 46:
               pawnPositions = [];
@@ -2642,67 +2849,68 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 }
               }
 
-              _i2 = 0;
+              _i4 = 0;
 
             case 49:
-              if (!(_i2 < pawnPositions.length)) {
-                _context.next = 56;
+              if (!(_i4 < pawnPositions.length)) {
+                _context3.next = 56;
                 break;
               }
 
-              if (!(pawnPositions[_i2].y < 0 || pawnPositions[_i2].x < 0 || pawnPositions[_i2].y > 7 || pawnPositions[_i2].x > 7)) {
-                _context.next = 52;
+              if (!(pawnPositions[_i4].y < 0 || pawnPositions[_i4].x < 0 || pawnPositions[_i4].y > 7 || pawnPositions[_i4].x > 7)) {
+                _context3.next = 52;
                 break;
               }
 
-              return _context.abrupt("continue", 53);
+              return _context3.abrupt("continue", 53);
 
             case 52:
-              if (this.board[pawnPositions[_i2].y][pawnPositions[_i2].x].colour !== tileData.colour) {
-                possibleMoves.push(pawnPositions[_i2]);
+              if (this.board[pawnPositions[_i4].y][pawnPositions[_i4].x].colour !== tileData.colour) {
+                possibleMoves.push(pawnPositions[_i4]);
               }
 
             case 53:
-              _i2++;
-              _context.next = 49;
+              _i4++;
+              _context3.next = 49;
               break;
 
             case 56:
-              return _context.abrupt("break", 57);
+              return _context3.abrupt("break", 57);
 
             case 57:
               this.possibleMoves = possibleMoves;
 
             case 58:
             case "end":
-              return _context.stop();
+              return _context3.stop();
           }
         }
       }, null, this);
     },
     checkDiagonal: function checkDiagonal(tileData) {
-      var _this5 = this;
+      var _this6 = this;
 
+      console.log('diagonalTile: ', tileData);
       return new Promise(function (resolve) {
         var possibleMoves = [];
         var edgePositions = [{
-          x: _this5.convertNumber(tileData.position.x - tileData.position.y),
-          y: _this5.convertNumber(tileData.position.y - tileData.position.x)
+          x: _this6.convertNumber(tileData.position.x - tileData.position.y),
+          y: _this6.convertNumber(tileData.position.y - tileData.position.x)
         }, {
-          x: _this5.convertNumber(tileData.position.x + tileData.position.y),
-          y: _this5.convertNumber(tileData.position.x - (7 - tileData.position.y))
+          x: _this6.convertNumber(tileData.position.x + tileData.position.y),
+          y: _this6.convertNumber(tileData.position.x - (7 - tileData.position.y))
         }, {
-          x: _this5.convertNumber(tileData.position.x + (7 - tileData.position.y)),
-          y: _this5.convertNumber(tileData.position.y + (7 - tileData.position.x))
+          x: _this6.convertNumber(tileData.position.x + (7 - tileData.position.y)),
+          y: _this6.convertNumber(tileData.position.y + (7 - tileData.position.x))
         }, {
-          x: _this5.convertNumber(tileData.position.x + tileData.position.y - 7),
-          y: _this5.convertNumber(tileData.position.x + tileData.position.y)
+          x: _this6.convertNumber(tileData.position.x + tileData.position.y - 7),
+          y: _this6.convertNumber(tileData.position.x + tileData.position.y)
         }];
 
         for (var i = 0; i < edgePositions.length; i++) {
           var angle = Math.atan2(edgePositions[i].y - tileData.position.y, edgePositions[i].x - tileData.position.x) * 180 / Math.PI;
           var distance = Math.floor(Math.sqrt(Math.pow(tileData.position.x - edgePositions[i].x, 2) + Math.pow(tileData.position.y - edgePositions[i].y, 2)));
-          possibleMoves.push.apply(possibleMoves, _toConsumableArray(_this5.checkDiagonalJump(angle, distance, tileData)));
+          possibleMoves.push.apply(possibleMoves, _toConsumableArray(_this6.checkDiagonalJump(angle, distance, tileData)));
         }
 
         resolve(possibleMoves);
@@ -2744,7 +2952,9 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
             if (this.board[y][x].colour !== tileData.colour) {
               possibleMoves.push({
                 y: y,
-                x: x
+                x: x,
+                type: this.board[y][x].type,
+                distance: distance - i - 1
               });
             }
 
@@ -2752,7 +2962,9 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
           } else {
             possibleMoves.push({
               y: y,
-              x: x
+              x: x,
+              type: this.board[y][x].type,
+              distance: distance - i - 1
             });
           }
         } else {
@@ -2763,65 +2975,97 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       return possibleMoves;
     },
     checkAxis: function checkAxis(tileData) {
-      var _this6 = this;
+      var _this7 = this;
 
       return new Promise(function (resolve) {
         var possibleMoves = [];
         var position = tileData.position;
 
         for (var i = position.x - 1; i >= 0; i--) {
-          var tile = _this6.board[position.y][i];
+          var tile = _this7.board[position.y][i];
 
           if (tile.type !== 'empty') {
             if (tile.colour !== tileData.colour) {
-              possibleMoves.push(tile.position);
+              possibleMoves.push({
+                x: tile.position.x,
+                y: tile.position.y,
+                type: tile.type
+              });
             }
 
             break;
           } else {
-            possibleMoves.push(tile.position);
+            possibleMoves.push({
+              x: tile.position.x,
+              y: tile.position.y,
+              type: tile.type
+            });
           }
         }
 
-        for (var _i3 = position.x + 1; _i3 <= 7; _i3++) {
-          var _tile = _this6.board[position.y][_i3];
+        for (var _i5 = position.x + 1; _i5 <= 7; _i5++) {
+          var _tile = _this7.board[position.y][_i5];
 
           if (_tile.type !== 'empty') {
             if (_tile.colour !== tileData.colour) {
-              possibleMoves.push(_tile.position);
+              possibleMoves.push({
+                x: _tile.position.x,
+                y: _tile.position.y,
+                type: _tile.type
+              });
             }
 
             break;
           } else {
-            possibleMoves.push(_tile.position);
+            possibleMoves.push({
+              x: _tile.position.x,
+              y: _tile.position.y,
+              type: _tile.type
+            });
           }
         }
 
-        for (var _i4 = position.y - 1; _i4 >= 0; _i4--) {
-          var _tile2 = _this6.board[_i4][position.x];
+        for (var _i6 = position.y - 1; _i6 >= 0; _i6--) {
+          var _tile2 = _this7.board[_i6][position.x];
 
           if (_tile2.type !== 'empty') {
             if (_tile2.colour !== tileData.colour) {
-              possibleMoves.push(_tile2.position);
+              possibleMoves.push({
+                x: _tile2.position.x,
+                y: _tile2.position.y,
+                type: _tile2.type
+              });
             }
 
             break;
           } else {
-            possibleMoves.push(_tile2.position);
+            possibleMoves.push({
+              x: _tile2.position.x,
+              y: _tile2.position.y,
+              type: _tile2.type
+            });
           }
         }
 
-        for (var _i5 = position.y + 1; _i5 <= 7; _i5++) {
-          var _tile3 = _this6.board[_i5][position.x];
+        for (var _i7 = position.y + 1; _i7 <= 7; _i7++) {
+          var _tile3 = _this7.board[_i7][position.x];
 
           if (_tile3.type !== 'empty') {
             if (_tile3.colour !== tileData.colour) {
-              possibleMoves.push(_tile3.position);
+              possibleMoves.push({
+                x: _tile3.position.x,
+                y: _tile3.position.y,
+                type: _tile3.type
+              });
             }
 
             break;
           } else {
-            possibleMoves.push(_tile3.position);
+            possibleMoves.push({
+              x: _tile3.position.x,
+              y: _tile3.position.y,
+              type: _tile3.type
+            });
           }
         }
 
@@ -2840,7 +3084,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
     }
   },
   mounted: function mounted() {
-    var _this7 = this;
+    var _this8 = this;
 
     console.log('Chess Component mounted.');
     this.checkGameState(); // Bind the mouse up to emptying possible moves, if the user tries to drop outside of the board.
@@ -2849,21 +3093,21 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
     Echo.join('game.' + this.lobby.url).listen('StartGameEvent', function (event) {
       console.log('new game: ', event.game);
-      _this7.board = event.game.board;
-      _this7.turn = event.game.turn;
+      _this8.board = event.game.board;
+      _this8.turn = event.game.turn;
 
-      _this7.addGameMessage("The game has started!");
+      _this8.addGameMessage("The game has started!");
     }).listen('RestartGameEvent', function (event) {
       console.log('restarting game');
-      _this7.board = null;
+      _this8.board = null;
 
-      _this7.addGameMessage("The game has been reset!");
+      _this8.addGameMessage("The game has been reset!");
     }).listen('GameMoveEvent', function (event) {
-      _this7.doGameMove(event.move);
+      _this8.doGameMove(event.move);
     }).listen('GameMessageEvent', function (event) {
       console.log('new game message: ', event.message);
 
-      _this7.addGameMessage(event.message);
+      _this8.addGameMessage(event.message);
     });
   }
 });
@@ -47406,7 +47650,15 @@ var render = function() {
               }
             }
           })
-        : _vm._e()
+        : _vm._e(),
+      _vm._v(" "),
+      _c("p", { staticClass: "tile-number" }, [
+        _vm._v(
+          _vm._s(_vm.tileData.position.x) +
+            "-" +
+            _vm._s(_vm.tileData.position.y)
+        )
+      ])
     ]
   )
 }
@@ -60630,3 +60882,4 @@ module.exports = __webpack_require__(/*! D:\laragon\www\laravelMiniGames\resourc
 /***/ })
 
 /******/ });
+//# sourceMappingURL=app.js.map
