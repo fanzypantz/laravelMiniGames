@@ -22,7 +22,7 @@
 
         <!--Buttons-->
         <div v-if="board === null" class="buttons">
-            <button @click="initiateGame()">Start Game</button>
+            <button @click="initiateGame(user.id, true)">Start Game</button>
         </div>
 
         <!--Promote Menu-->
@@ -34,7 +34,10 @@
                 <img v-bind:src="getPieceImage('rook')" alt="" @click="promote('rook')"/>
                 <img v-bind:src="getPieceImage('bishop')" alt="" @click="promote('bishop')"/>
             </div>
+        </div>
 
+        <div v-if="isChecked" class="pass">
+            <button @click="passTurn()">Start Game</button>
         </div>
     </div>
 
@@ -51,6 +54,7 @@
                 isPromoting: false,
                 board: null,
                 turn: null,
+                score: {},
                 player1: null,
                 possibleMoves: [],
                 gameMove: null,
@@ -107,10 +111,11 @@
                     (
                         (tile.colour === 'white' && this.player1 === this.user.id) ||
                         (tile.colour === 'black' && this.player1 !== this.user.id)
-                    ) &&
-                    (
-                        this.isChecked === false || (this.isChecked && tile.type === 'king')
                     )
+                    // &&
+                    // (
+                    //     this.isChecked === false || (this.isChecked && tile.type === 'king')
+                    // )
                 )
             },
 
@@ -136,6 +141,19 @@
                 }
             },
 
+            getKing(board) {
+                let kingType = this.player1 === this.user.id ? 'white' : 'black';
+                return board.reduce(function (a, b) {
+                    return a.concat(b);
+                }).filter((row) => {
+                    return row.type === 'king' && row.colour === kingType;
+                })[0];
+            },
+
+            cleanCopy(object) {
+                return JSON.parse(JSON.stringify(object))
+            },
+
             /*
                 Game control logic
             */
@@ -149,21 +167,28 @@
                 }
             },
 
-            initiateGame() {
+            initiateGame(player1, newGame) {
                 window.axios.post(`/game/startGame/${this.lobby.url}`, {
-                    game: this.startGame(),
+                    game: this.startGame(player1, newGame),
                 });
                 this.addGameMessage(`The game has started!`)
             },
 
-            startGame() {
+            startGame(player1, newGame) {
                 this.board = this.initiateBoard();
-                this.turn = this.user.id;
-                this.player1 = this.user.id;
+                this.turn = player1;
+                this.player1 = player1;
+                if (newGame) {
+                    this.score[this.user.id] = 0;
+                    this.score[this.getOpponentUser().id] = 0;
+                } else {
+                    this.score[player1]++;
+                }
                 return {
                     board: this.board,
                     turn: this.turn,
-                    player1: this.player1
+                    player1: this.player1,
+                    score: this.score,
                 }
             },
 
@@ -178,15 +203,18 @@
 
             sendGameMove(gameMove) {
                 console.log('sending: ', gameMove);
-                this.doGameMove(gameMove).then(() => {
+                this.doGameMove(gameMove, false).then(() => {
                     window.axios.post(`/game/gameMove/${this.lobby.url}`, {
                         move: gameMove,
                         gameState: {
                             board: this.board,
                             turn: this.turn,
-                            player1: this.player1
+                            player1: this.player1,
+                            score: this.score,
                         }
                     });
+                }).catch((e) => {
+                    console.log('error: ', e);
                 });
             },
 
@@ -219,42 +247,91 @@
                 this.togglePromote();
             },
 
-            doGameMove(gameMove) {
-                return new Promise(resolve => {
+            doGameMove(gameMove, isReceiver) {
+                return new Promise(async (resolve, reject) => {
 
                     // ANIMATIONS HERE
 
                     // Then set new data
-                    let gameMoveData = JSON.parse(JSON.stringify(gameMove));
+                    let gameMoveData = this.cleanCopy(gameMove);
+                    let board = this.cleanCopy(this.board);
                     console.log('gameMoveData: ', gameMoveData);
                     let oldPiece = gameMoveData.oldPiece;
                     let newPiece = gameMoveData.newPiece;
+                    let king;
 
-                    Vue.set(this.board[oldPiece.position.y], oldPiece.position.x, {
+                    board[oldPiece.position.y][oldPiece.position.x] = {
                         "type": "empty",
                         "position": oldPiece.position,
-                    });
+                    };
 
                     oldPiece.position = newPiece.position;
                     if (oldPiece.type === 'pawn' && oldPiece.isInInitialState) {
                         oldPiece.isInInitialState = false;
                     }
-                    Vue.set(this.board[newPiece.position.y], newPiece.position.x, oldPiece);
+                    board[newPiece.position.y][newPiece.position.x] = oldPiece;
 
+                    // Check if this new board state will result in the king still being in Check, reject if true
+                    king = this.getKing(board);
+                    if (this.isChecked && !isReceiver) {
+                        console.log('1: ', );
+                        // You are checked and you are the one making a move
+                        let isCheckedAfterMove = await this.checkKingTiles({
+                            position: king.position,
+                            colour: king.colour,
+                        }, board);
+                        // If king is checked after trying the move reject, if not do the move and unset check
+                        if (isCheckedAfterMove) {
+                            reject('King is still in check');
+                            this.addGameMessage("Your king will still be in check after this move!");
+                            return;
+                        } else {
+                            this.board = board;
+                            this.isChecked = false;
+                        }
+                    } else if (!this.isChecked && isReceiver) {
+                        console.log('2: ', );
+                        // You are not checked and you are just receiving opponent move
+                        this.isChecked = await this.checkKingTiles({
+                            position: king.position,
+                            colour: king.colour,
+                        }, board);
+                        if (this.isChecked) {
+                            console.log('is checked: ', );
+                            this.addGameMessage("Your king is now in check!");
+                        }
+                        this.board = board;
+                    } else if (!this.isChecked && !isReceiver) {
+                        console.log('3: ', );
+                        // You are not checked and you are the one making a move
+                        let isCheckedAfterMove = await this.checkKingTiles({
+                            position: king.position,
+                            colour: king.colour,
+                        }, board);
+                        if (isCheckedAfterMove) {
+                            reject('King will be in check after this move!');
+                            this.addGameMessage("Your king will be in check after this move!");
+                            return;
+                        } else {
+                            this.board = board;
+                        }
+                    } else {
+                        console.log('4: ', );
+                    }
                     // Check if the game was won before changing the turn
                     this.checkIfKing(newPiece.type, this.turn);
 
                     if (this.turn === this.user.id) {
                         let opponent = this.getOpponentUser();
-                        console.log('opponent turn: ', opponent);
+                        this.addGameMessage('Opponents Turn');
                         this.turn = opponent.id;
                     } else {
-                        console.log('my turn: ',);
+                        this.addGameMessage('My Turn');
                         this.turn = this.user.id;
                     }
 
                     // Check if king has been put in check or checkmate
-                    this.checkKingIsChecked();
+                    this.checkMate(king, board);
                     resolve(true);
                 });
             },
@@ -266,7 +343,11 @@
             },
 
             handleWin(attacker) {
-
+                // Just restart the game if game won
+                if (attacker === this.user.id) {
+                    // Just let the winner send the request to start a new game
+                    this.initiateGame(attacker, false);
+                }
             },
 
 
@@ -310,8 +391,8 @@
                         }
                         break;
                     case "queen":
-                        diagonalMoves = await this.checkDiagonal(tileData);
-                        axisMoves = await this.checkAxis(tileData);
+                        diagonalMoves = await this.checkDiagonal(tileData, this.board);
+                        axisMoves = await this.checkAxis(tileData, this.board);
                         if (diagonalMoves.length > 0) {
                             possibleMoves.push(...diagonalMoves);
                         }
@@ -320,13 +401,13 @@
                         }
                         break;
                     case "rook":
-                        axisMoves = await this.checkAxis(tileData);
+                        axisMoves = await this.checkAxis(tileData, this.board);
                         if (axisMoves.length > 0) {
                             possibleMoves.push(...axisMoves);
                         }
                         break;
                     case "bishop":
-                        diagonalMoves = await this.checkDiagonal(tileData);
+                        diagonalMoves = await this.checkDiagonal(tileData, this.board);
                         if (diagonalMoves.length > 0) {
                             possibleMoves.push(...diagonalMoves);
                         }
@@ -403,9 +484,7 @@
                 this.possibleMoves = possibleMoves;
             },
 
-            checkDiagonal(tileData) {
-                console.log('diagonalTile: ', tileData);
-
+            checkDiagonal(tileData, board) {
                 return new Promise((resolve) => {
                     let possibleMoves = [];
                     let edgePositions = [
@@ -430,13 +509,13 @@
                     for (let i = 0; i < edgePositions.length; i++) {
                         let angle = Math.atan2(edgePositions[i].y - tileData.position.y, edgePositions[i].x - tileData.position.x) * 180 / Math.PI;
                         let distance = Math.floor(Math.sqrt(Math.pow((tileData.position.x - edgePositions[i].x), 2) + Math.pow((tileData.position.y - edgePositions[i].y), 2)));
-                        possibleMoves.push(...this.checkDiagonalJump(angle, distance, tileData));
+                        possibleMoves.push(...this.checkDiagonalJump(angle, distance, tileData, board));
                     }
                     resolve(possibleMoves);
                 });
             },
 
-            checkDiagonalJump(angle, distance, tileData) {
+            checkDiagonalJump(angle, distance, tileData, board) {
                 let x;
                 let y;
                 let possibleMoves = [];
@@ -463,13 +542,13 @@
                             break;
                     }
                     if (x <= 7 && x >= 0 && y <= 7 && y >= 0) {
-                        if (this.board[y][x].type !== "empty") {
-                            if (this.board[y][x].colour !== tileData.colour) {
-                                possibleMoves.push({y: y, x: x, type: this.board[y][x].type, distance: i})
+                        if (board[y][x].type !== "empty") {
+                            if (board[y][x].colour !== tileData.colour) {
+                                possibleMoves.push({y: y, x: x, type: board[y][x].type, distance: i})
                             }
                             return possibleMoves;
                         } else {
-                            possibleMoves.push({y: y, x: x, type: this.board[y][x].type, distance: i});
+                            possibleMoves.push({y: y, x: x, type: board[y][x].type, distance: i});
                         }
                     } else {
                         return possibleMoves;
@@ -478,7 +557,7 @@
                 return possibleMoves;
             },
 
-            checkAxis(tileData) {
+            checkAxis(tileData, board) {
                 return new Promise((resolve) => {
                     let possibleMoves = [];
                     let position = tileData.position;
@@ -486,7 +565,7 @@
 
                     for (let i = position.x - 1; i >= 0; i--) {
                         distance++;
-                        let tile = this.board[position.y][i];
+                        let tile = board[position.y][i];
                         if (tile.type !== 'empty') {
                             if (tile.colour !== tileData.colour) {
                                 possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type, distance: distance});
@@ -499,7 +578,7 @@
                     distance = 0;
                     for (let i = position.x + 1; i <= 7; i++) {
                         distance++;
-                        let tile = this.board[position.y][i];
+                        let tile = board[position.y][i];
                         if (tile.type !== 'empty') {
                             if (tile.colour !== tileData.colour) {
                                 possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type, distance: distance});
@@ -512,7 +591,7 @@
                     distance = 0;
                     for (let i = position.y - 1; i >= 0; i--) {
                         distance++;
-                        let tile = this.board[i][position.x];
+                        let tile = board[i][position.x];
                         if (tile.type !== 'empty') {
                             if (tile.colour !== tileData.colour) {
                                 possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type, distance: distance});
@@ -525,7 +604,7 @@
                     distance = 0;
                     for (let i = position.y + 1; i <= 7; i++) {
                         distance++;
-                        let tile = this.board[i][position.x];
+                        let tile = board[i][position.x];
                         if (tile.type !== 'empty') {
                             if (tile.colour !== tileData.colour) {
                                 possibleMoves.push({x: tile.position.x, y: tile.position.y, type: tile.type, distance: distance});
@@ -545,20 +624,7 @@
                 this.possibleMoves = [];
             },
 
-            async checkKingIsChecked() {
-                let king;
-                let kingType = this.player1 === this.user.id ? 'white' : 'black';
-                king = this.board.reduce(function (a, b) {
-                    return a.concat(b);
-                }).filter((row) => {
-                    return row.type === 'king' && row.colour === kingType;
-                })[0];
-
-                let check = await this.checkKingTiles({
-                    position: king.position,
-                    colour: king.colour,
-                });
-
+            async checkMate(king, board) {
                 let positions = [
                     {
                         x: king.position.x - 1,
@@ -603,25 +669,24 @@
                     if (await this.checkKingTiles({
                         position: position,
                         colour: king.colour
-                    })){
+                    }, board)){
                         checkMateCount++;
                     }
                 }
 
                 if (checkMateCount === 8) {
-                    alert("Check Mate")
+                    this.handleWin(this.getOpponentUser().id);
                 }
-
-                this.isChecked = check;
-                console.log('check: ', check);
             },
 
-            checkKingTiles(tileData) {
+            checkKingTiles(tileData, board) {
                 return new Promise (async (resolve, reject) => {
-                    let diagonalMoves = await this.checkDiagonal(tileData);
+                    let diagonalMoves = await this.checkDiagonal(tileData, board);
                     diagonalMoves = diagonalMoves.filter(e => e.type !== 'empty');
-                    let axisMoves = await this.checkAxis(tileData);
+                    let axisMoves = await this.checkAxis(tileData, board);
                     axisMoves = axisMoves.filter(e => e.type !== 'empty');
+                    console.log('axismoves: ', axisMoves);
+                    console.log('diagonalMoves: ', diagonalMoves);
                     // Check if any diagonal pieces can kill the king
                     if (diagonalMoves.length > 0) {
                         let count = 0;
@@ -668,20 +733,23 @@
                         if (knightPositions[i].y > 7 || knightPositions[i].x > 7 || knightPositions[i].y < 0 || knightPositions[i].x < 0) {
                             continue;
                         }
-                        if (this.board[knightPositions[i].y][knightPositions[i].x].type === 'knight') {
+                        let knight = board[knightPositions[i].y][knightPositions[i].x];
+                        if (knight.type === 'knight' && knight.colour !== tileData.colour) {
                             resolve(true);
                         }
                     }
 
 
                     // Check if there are any pawns
-                    let pawns = axisMoves.filter(e => e.type === 'pawn');
+                    let pawns = [];
+                    pawns.push(...diagonalMoves.filter(e => e.type === 'pawn'));
+                    pawns.push(...axisMoves.filter(e => e.type === 'pawn'));
                     if (pawns.length > 0) {
                         if (this.player1 === this.user.id) {
                             for (let i = 0; i < pawns.length; i++) {
                                 if (
-                                    pawns[i].position === {x: tileData.position.x-1, y: tileData.position.y-1} ||
-                                    pawns[i].position === {x: tileData.position.x+1, y: tileData.position.y-1}
+                                    (pawns[i].x === tileData.position.x-1 && pawns[i].y === tileData.position.y-1) ||
+                                    (pawns[i].x === tileData.position.x+1 && pawns[i].y === tileData.position.y-1)
                                 ) {
                                     resolve(true);
                                 }
@@ -689,8 +757,8 @@
                         } else {
                             for (let i = 0; i < pawns.length; i++) {
                                 if (
-                                    pawns[i].position === {x: tileData.position.x+1, y: tileData.position.y+1} ||
-                                    pawns[i].position === {x: tileData.position.x-1, y: tileData.position.y+1}
+                                    (pawns[i].x === tileData.position.x+1 && pawns[i].y === tileData.position.y+1) ||
+                                    (pawns[i].x === tileData.position.x-1 && pawns[i].y === tileData.position.y+1)
                                 ) {
                                     resolve(true);
                                 }
@@ -733,7 +801,7 @@
                     this.addGameMessage(`The game has been reset!`);
                 })
                 .listen('GameMoveEvent', (event) => {
-                    this.doGameMove(event.move);
+                    this.doGameMove(event.move, true);
                 }).listen('GameMessageEvent', (event) => {
                     console.log('new game message: ', event.message);
                     this.addGameMessage(event.message);

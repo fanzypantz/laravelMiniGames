@@ -2233,6 +2233,9 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 //
 //
 //
+//
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
@@ -2241,6 +2244,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       isPromoting: false,
       board: null,
       turn: null,
+      score: {},
       player1: null,
       possibleMoves: [],
       gameMove: null
@@ -2297,7 +2301,11 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       return board;
     },
     getDragPermission: function getDragPermission(tile) {
-      return this.turn === this.user.id && tile.type !== 'empty' && (tile.colour === 'white' && this.player1 === this.user.id || tile.colour === 'black' && this.player1 !== this.user.id) && (this.isChecked === false || this.isChecked && tile.type === 'king');
+      return this.turn === this.user.id && tile.type !== 'empty' && (tile.colour === 'white' && this.player1 === this.user.id || tile.colour === 'black' && this.player1 !== this.user.id) // &&
+      // (
+      //     this.isChecked === false || (this.isChecked && tile.type === 'king')
+      // )
+      ;
     },
     convertNumber: function convertNumber(number) {
       if (number > 7) {
@@ -2322,6 +2330,17 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         return "/images/icons/play.svg";
       }
     },
+    getKing: function getKing(board) {
+      var kingType = this.player1 === this.user.id ? 'white' : 'black';
+      return board.reduce(function (a, b) {
+        return a.concat(b);
+      }).filter(function (row) {
+        return row.type === 'king' && row.colour === kingType;
+      })[0];
+    },
+    cleanCopy: function cleanCopy(object) {
+      return JSON.parse(JSON.stringify(object));
+    },
 
     /*
         Game control logic
@@ -2335,20 +2354,29 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         this.player1 = gameState.player1;
       }
     },
-    initiateGame: function initiateGame() {
+    initiateGame: function initiateGame(player1, newGame) {
       window.axios.post("/game/startGame/".concat(this.lobby.url), {
-        game: this.startGame()
+        game: this.startGame(player1, newGame)
       });
       this.addGameMessage("The game has started!");
     },
-    startGame: function startGame() {
+    startGame: function startGame(player1, newGame) {
       this.board = this.initiateBoard();
-      this.turn = this.user.id;
-      this.player1 = this.user.id;
+      this.turn = player1;
+      this.player1 = player1;
+
+      if (newGame) {
+        this.score[this.user.id] = 0;
+        this.score[this.getOpponentUser().id] = 0;
+      } else {
+        this.score[player1]++;
+      }
+
       return {
         board: this.board,
         turn: this.turn,
-        player1: this.player1
+        player1: this.player1,
+        score: this.score
       };
     },
     restartGame: function restartGame() {
@@ -2362,15 +2390,18 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       var _this3 = this;
 
       console.log('sending: ', gameMove);
-      this.doGameMove(gameMove).then(function () {
+      this.doGameMove(gameMove, false).then(function () {
         window.axios.post("/game/gameMove/".concat(_this3.lobby.url), {
           move: gameMove,
           gameState: {
             board: _this3.board,
             turn: _this3.turn,
-            player1: _this3.player1
+            player1: _this3.player1,
+            score: _this3.score
           }
         });
+      })["catch"](function (e) {
+        console.log('error: ', e);
       });
     },
     togglePromote: function togglePromote(gameMove) {
@@ -2404,44 +2435,164 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       this.sendGameMove(this.gameMove);
       this.togglePromote();
     },
-    doGameMove: function doGameMove(gameMove) {
+    doGameMove: function doGameMove(gameMove, isReceiver) {
       var _this4 = this;
 
-      return new Promise(function (resolve) {
-        // ANIMATIONS HERE
-        // Then set new data
-        var gameMoveData = JSON.parse(JSON.stringify(gameMove));
-        console.log('gameMoveData: ', gameMoveData);
-        var oldPiece = gameMoveData.oldPiece;
-        var newPiece = gameMoveData.newPiece;
-        Vue.set(_this4.board[oldPiece.position.y], oldPiece.position.x, {
-          "type": "empty",
-          "position": oldPiece.position
+      return new Promise(function _callee(resolve, reject) {
+        var gameMoveData, board, oldPiece, newPiece, king, isCheckedAfterMove, _isCheckedAfterMove, opponent;
+
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                // ANIMATIONS HERE
+                // Then set new data
+                gameMoveData = _this4.cleanCopy(gameMove);
+                board = _this4.cleanCopy(_this4.board);
+                console.log('gameMoveData: ', gameMoveData);
+                oldPiece = gameMoveData.oldPiece;
+                newPiece = gameMoveData.newPiece;
+                board[oldPiece.position.y][oldPiece.position.x] = {
+                  "type": "empty",
+                  "position": oldPiece.position
+                };
+                oldPiece.position = newPiece.position;
+
+                if (oldPiece.type === 'pawn' && oldPiece.isInInitialState) {
+                  oldPiece.isInInitialState = false;
+                }
+
+                board[newPiece.position.y][newPiece.position.x] = oldPiece; // Check if this new board state will result in the king still being in Check, reject if true
+
+                king = _this4.getKing(board);
+
+                if (!(_this4.isChecked && !isReceiver)) {
+                  _context.next = 25;
+                  break;
+                }
+
+                console.log('1: '); // You are checked and you are the one making a move
+
+                _context.next = 14;
+                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(_this4.checkKingTiles({
+                  position: king.position,
+                  colour: king.colour
+                }, board));
+
+              case 14:
+                isCheckedAfterMove = _context.sent;
+
+                if (!isCheckedAfterMove) {
+                  _context.next = 21;
+                  break;
+                }
+
+                reject('King is still in check');
+
+                _this4.addGameMessage("Your king will still be in check after this move!");
+
+                return _context.abrupt("return");
+
+              case 21:
+                _this4.board = board;
+                _this4.isChecked = false;
+
+              case 23:
+                _context.next = 49;
+                break;
+
+              case 25:
+                if (!(!_this4.isChecked && isReceiver)) {
+                  _context.next = 34;
+                  break;
+                }
+
+                console.log('2: '); // You are not checked and you are just receiving opponent move
+
+                _context.next = 29;
+                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(_this4.checkKingTiles({
+                  position: king.position,
+                  colour: king.colour
+                }, board));
+
+              case 29:
+                _this4.isChecked = _context.sent;
+
+                if (_this4.isChecked) {
+                  console.log('is checked: ');
+
+                  _this4.addGameMessage("Your king is now in check!");
+                }
+
+                _this4.board = board;
+                _context.next = 49;
+                break;
+
+              case 34:
+                if (!(!_this4.isChecked && !isReceiver)) {
+                  _context.next = 48;
+                  break;
+                }
+
+                console.log('3: '); // You are not checked and you are the one making a move
+
+                _context.next = 38;
+                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(_this4.checkKingTiles({
+                  position: king.position,
+                  colour: king.colour
+                }, board));
+
+              case 38:
+                _isCheckedAfterMove = _context.sent;
+
+                if (!_isCheckedAfterMove) {
+                  _context.next = 45;
+                  break;
+                }
+
+                reject('King will be in check after this move!');
+
+                _this4.addGameMessage("Your king will be in check after this move!");
+
+                return _context.abrupt("return");
+
+              case 45:
+                _this4.board = board;
+
+              case 46:
+                _context.next = 49;
+                break;
+
+              case 48:
+                console.log('4: ');
+
+              case 49:
+                // Check if the game was won before changing the turn
+                _this4.checkIfKing(newPiece.type, _this4.turn);
+
+                if (_this4.turn === _this4.user.id) {
+                  opponent = _this4.getOpponentUser();
+
+                  _this4.addGameMessage('Opponents Turn');
+
+                  _this4.turn = opponent.id;
+                } else {
+                  _this4.addGameMessage('My Turn');
+
+                  _this4.turn = _this4.user.id;
+                } // Check if king has been put in check or checkmate
+
+
+                _this4.checkMate(king, board);
+
+                resolve(true);
+
+              case 53:
+              case "end":
+                return _context.stop();
+            }
+          }
         });
-        oldPiece.position = newPiece.position;
-
-        if (oldPiece.type === 'pawn' && oldPiece.isInInitialState) {
-          oldPiece.isInInitialState = false;
-        }
-
-        Vue.set(_this4.board[newPiece.position.y], newPiece.position.x, oldPiece); // Check if the game was won before changing the turn
-
-        _this4.checkIfKing(newPiece.type, _this4.turn);
-
-        if (_this4.turn === _this4.user.id) {
-          var opponent = _this4.getOpponentUser();
-
-          console.log('opponent turn: ', opponent);
-          _this4.turn = opponent.id;
-        } else {
-          console.log('my turn: ');
-          _this4.turn = _this4.user.id;
-        } // Check if king has been put in check or checkmate
-
-
-        _this4.checkKingIsChecked();
-
-        resolve(true);
       });
     },
     checkIfKing: function checkIfKing(target, attacker) {
@@ -2449,7 +2600,13 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         this.handleWin(attacker);
       }
     },
-    handleWin: function handleWin(attacker) {},
+    handleWin: function handleWin(attacker) {
+      // Just restart the game if game won
+      if (attacker === this.user.id) {
+        // Just let the winner send the request to start a new game
+        this.initiateGame(attacker, false);
+      }
+    },
 
     /*
         Check possible game moves
@@ -2462,16 +2619,16 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
     checkPossibleMoves: function checkPossibleMoves(tileData) {
       var possibleMoves, diagonalMoves, axisMoves, knightPositions, i, kingPositions, _i, pawnPositions, _i2;
 
-      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function checkPossibleMoves$(_context) {
+      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function checkPossibleMoves$(_context2) {
         while (1) {
-          switch (_context.prev = _context.next) {
+          switch (_context2.prev = _context2.next) {
             case 0:
               possibleMoves = [];
               diagonalMoves = [];
               axisMoves = [];
               console.log('tileData: ', tileData);
-              _context.t0 = tileData.type;
-              _context.next = _context.t0 === "knight" ? 7 : _context.t0 === "queen" ? 17 : _context.t0 === "rook" ? 26 : _context.t0 === "bishop" ? 31 : _context.t0 === "king" ? 36 : 46;
+              _context2.t0 = tileData.type;
+              _context2.next = _context2.t0 === "knight" ? 7 : _context2.t0 === "queen" ? 17 : _context2.t0 === "rook" ? 26 : _context2.t0 === "bishop" ? 31 : _context2.t0 === "king" ? 36 : 46;
               break;
 
             case 7:
@@ -2504,16 +2661,16 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
             case 9:
               if (!(i < knightPositions.length)) {
-                _context.next = 16;
+                _context2.next = 16;
                 break;
               }
 
               if (!(knightPositions[i].y < 0 || knightPositions[i].x < 0 || knightPositions[i].y > 7 || knightPositions[i].x > 7)) {
-                _context.next = 12;
+                _context2.next = 12;
                 break;
               }
 
-              return _context.abrupt("continue", 13);
+              return _context2.abrupt("continue", 13);
 
             case 12:
               if (this.board[knightPositions[i].y][knightPositions[i].x].colour !== tileData.colour || this.board[knightPositions[i].y][knightPositions[i].x].type === "empty") {
@@ -2522,23 +2679,23 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
             case 13:
               i++;
-              _context.next = 9;
+              _context2.next = 9;
               break;
 
             case 16:
-              return _context.abrupt("break", 57);
+              return _context2.abrupt("break", 57);
 
             case 17:
-              _context.next = 19;
-              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkDiagonal(tileData));
+              _context2.next = 19;
+              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkDiagonal(tileData, this.board));
 
             case 19:
-              diagonalMoves = _context.sent;
-              _context.next = 22;
-              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkAxis(tileData));
+              diagonalMoves = _context2.sent;
+              _context2.next = 22;
+              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkAxis(tileData, this.board));
 
             case 22:
-              axisMoves = _context.sent;
+              axisMoves = _context2.sent;
 
               if (diagonalMoves.length > 0) {
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(diagonalMoves));
@@ -2548,33 +2705,33 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(axisMoves));
               }
 
-              return _context.abrupt("break", 57);
+              return _context2.abrupt("break", 57);
 
             case 26:
-              _context.next = 28;
-              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkAxis(tileData));
+              _context2.next = 28;
+              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkAxis(tileData, this.board));
 
             case 28:
-              axisMoves = _context.sent;
+              axisMoves = _context2.sent;
 
               if (axisMoves.length > 0) {
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(axisMoves));
               }
 
-              return _context.abrupt("break", 57);
+              return _context2.abrupt("break", 57);
 
             case 31:
-              _context.next = 33;
-              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkDiagonal(tileData));
+              _context2.next = 33;
+              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkDiagonal(tileData, this.board));
 
             case 33:
-              diagonalMoves = _context.sent;
+              diagonalMoves = _context2.sent;
 
               if (diagonalMoves.length > 0) {
                 possibleMoves.push.apply(possibleMoves, _toConsumableArray(diagonalMoves));
               }
 
-              return _context.abrupt("break", 57);
+              return _context2.abrupt("break", 57);
 
             case 36:
               kingPositions = [{
@@ -2606,16 +2763,16 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
             case 38:
               if (!(_i < kingPositions.length)) {
-                _context.next = 45;
+                _context2.next = 45;
                 break;
               }
 
               if (!(kingPositions[_i].y < 0 || kingPositions[_i].x < 0 || kingPositions[_i].y > 7 || kingPositions[_i].x > 7)) {
-                _context.next = 41;
+                _context2.next = 41;
                 break;
               }
 
-              return _context.abrupt("continue", 42);
+              return _context2.abrupt("continue", 42);
 
             case 41:
               if (this.board[kingPositions[_i].y][kingPositions[_i].x].colour !== tileData.colour) {
@@ -2624,11 +2781,11 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
             case 42:
               _i++;
-              _context.next = 38;
+              _context2.next = 38;
               break;
 
             case 45:
-              return _context.abrupt("break", 57);
+              return _context2.abrupt("break", 57);
 
             case 46:
               pawnPositions = [];
@@ -2703,16 +2860,16 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
             case 49:
               if (!(_i2 < pawnPositions.length)) {
-                _context.next = 56;
+                _context2.next = 56;
                 break;
               }
 
               if (!(pawnPositions[_i2].y < 0 || pawnPositions[_i2].x < 0 || pawnPositions[_i2].y > 7 || pawnPositions[_i2].x > 7)) {
-                _context.next = 52;
+                _context2.next = 52;
                 break;
               }
 
-              return _context.abrupt("continue", 53);
+              return _context2.abrupt("continue", 53);
 
             case 52:
               if (this.board[pawnPositions[_i2].y][pawnPositions[_i2].x].colour !== tileData.colour) {
@@ -2721,26 +2878,25 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
             case 53:
               _i2++;
-              _context.next = 49;
+              _context2.next = 49;
               break;
 
             case 56:
-              return _context.abrupt("break", 57);
+              return _context2.abrupt("break", 57);
 
             case 57:
               this.possibleMoves = possibleMoves;
 
             case 58:
             case "end":
-              return _context.stop();
+              return _context2.stop();
           }
         }
       }, null, this);
     },
-    checkDiagonal: function checkDiagonal(tileData) {
+    checkDiagonal: function checkDiagonal(tileData, board) {
       var _this5 = this;
 
-      console.log('diagonalTile: ', tileData);
       return new Promise(function (resolve) {
         var possibleMoves = [];
         var edgePositions = [{
@@ -2760,13 +2916,13 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         for (var i = 0; i < edgePositions.length; i++) {
           var angle = Math.atan2(edgePositions[i].y - tileData.position.y, edgePositions[i].x - tileData.position.x) * 180 / Math.PI;
           var distance = Math.floor(Math.sqrt(Math.pow(tileData.position.x - edgePositions[i].x, 2) + Math.pow(tileData.position.y - edgePositions[i].y, 2)));
-          possibleMoves.push.apply(possibleMoves, _toConsumableArray(_this5.checkDiagonalJump(angle, distance, tileData)));
+          possibleMoves.push.apply(possibleMoves, _toConsumableArray(_this5.checkDiagonalJump(angle, distance, tileData, board)));
         }
 
         resolve(possibleMoves);
       });
     },
-    checkDiagonalJump: function checkDiagonalJump(angle, distance, tileData) {
+    checkDiagonalJump: function checkDiagonalJump(angle, distance, tileData, board) {
       var x;
       var y;
       var possibleMoves = [];
@@ -2798,12 +2954,12 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         }
 
         if (x <= 7 && x >= 0 && y <= 7 && y >= 0) {
-          if (this.board[y][x].type !== "empty") {
-            if (this.board[y][x].colour !== tileData.colour) {
+          if (board[y][x].type !== "empty") {
+            if (board[y][x].colour !== tileData.colour) {
               possibleMoves.push({
                 y: y,
                 x: x,
-                type: this.board[y][x].type,
+                type: board[y][x].type,
                 distance: i
               });
             }
@@ -2813,7 +2969,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
             possibleMoves.push({
               y: y,
               x: x,
-              type: this.board[y][x].type,
+              type: board[y][x].type,
               distance: i
             });
           }
@@ -2824,9 +2980,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
       return possibleMoves;
     },
-    checkAxis: function checkAxis(tileData) {
-      var _this6 = this;
-
+    checkAxis: function checkAxis(tileData, board) {
       return new Promise(function (resolve) {
         var possibleMoves = [];
         var position = tileData.position;
@@ -2834,7 +2988,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
         for (var i = position.x - 1; i >= 0; i--) {
           distance++;
-          var tile = _this6.board[position.y][i];
+          var tile = board[position.y][i];
 
           if (tile.type !== 'empty') {
             if (tile.colour !== tileData.colour) {
@@ -2861,7 +3015,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
         for (var _i3 = position.x + 1; _i3 <= 7; _i3++) {
           distance++;
-          var _tile = _this6.board[position.y][_i3];
+          var _tile = board[position.y][_i3];
 
           if (_tile.type !== 'empty') {
             if (_tile.colour !== tileData.colour) {
@@ -2888,7 +3042,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
         for (var _i4 = position.y - 1; _i4 >= 0; _i4--) {
           distance++;
-          var _tile2 = _this6.board[_i4][position.x];
+          var _tile2 = board[_i4][position.x];
 
           if (_tile2.type !== 'empty') {
             if (_tile2.colour !== tileData.colour) {
@@ -2915,7 +3069,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
         for (var _i5 = position.y + 1; _i5 <= 7; _i5++) {
           distance++;
-          var _tile3 = _this6.board[_i5][position.x];
+          var _tile3 = board[_i5][position.x];
 
           if (_tile3.type !== 'empty') {
             if (_tile3.colour !== tileData.colour) {
@@ -2944,27 +3098,13 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
     emptyPossibleMoves: function emptyPossibleMoves() {
       this.possibleMoves = [];
     },
-    checkKingIsChecked: function checkKingIsChecked() {
-      var king, kingType, check, positions, checkMateCount, _i6, _positions, position;
+    checkMate: function checkMate(king, board) {
+      var positions, checkMateCount, _i6, _positions, position;
 
-      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function checkKingIsChecked$(_context2) {
+      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function checkMate$(_context3) {
         while (1) {
-          switch (_context2.prev = _context2.next) {
+          switch (_context3.prev = _context3.next) {
             case 0:
-              kingType = this.player1 === this.user.id ? 'white' : 'black';
-              king = this.board.reduce(function (a, b) {
-                return a.concat(b);
-              }).filter(function (row) {
-                return row.type === 'king' && row.colour === kingType;
-              })[0];
-              _context2.next = 4;
-              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkKingTiles({
-                position: king.position,
-                colour: king.colour
-              }));
-
-            case 4:
-              check = _context2.sent;
               positions = [{
                 x: king.position.x - 1,
                 y: king.position.y - 1
@@ -2993,82 +3133,81 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
               checkMateCount = 0;
               _i6 = 0, _positions = positions;
 
-            case 8:
+            case 3:
               if (!(_i6 < _positions.length)) {
-                _context2.next = 19;
+                _context3.next = 14;
                 break;
               }
 
               position = _positions[_i6];
 
               if (!(position.x > 7 || position.y > 7 || position.x < 0 || position.y < 0)) {
-                _context2.next = 12;
+                _context3.next = 7;
                 break;
               }
 
-              return _context2.abrupt("continue", 16);
+              return _context3.abrupt("continue", 11);
 
-            case 12:
-              _context2.next = 14;
+            case 7:
+              _context3.next = 9;
               return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(this.checkKingTiles({
                 position: position,
                 colour: king.colour
-              }));
+              }, board));
 
-            case 14:
-              if (!_context2.sent) {
-                _context2.next = 16;
+            case 9:
+              if (!_context3.sent) {
+                _context3.next = 11;
                 break;
               }
 
               checkMateCount++;
 
-            case 16:
+            case 11:
               _i6++;
-              _context2.next = 8;
+              _context3.next = 3;
               break;
 
-            case 19:
+            case 14:
               if (checkMateCount === 8) {
-                alert("Check Mate");
+                this.handleWin(this.getOpponentUser().id);
               }
 
-              this.isChecked = check;
-              console.log('check: ', check);
-
-            case 22:
+            case 15:
             case "end":
-              return _context2.stop();
+              return _context3.stop();
           }
         }
       }, null, this);
     },
-    checkKingTiles: function checkKingTiles(tileData) {
-      var _this7 = this;
+    checkKingTiles: function checkKingTiles(tileData, board) {
+      var _this6 = this;
 
-      return new Promise(function _callee(resolve, reject) {
-        var diagonalMoves, axisMoves, count, king, _count, _king, knightPositions, i, pawns, _i7, _i8;
+      return new Promise(function _callee2(resolve, reject) {
+        var diagonalMoves, axisMoves, count, king, _count, _king, knightPositions, i, knight, pawns, _i7, _i8;
 
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function _callee$(_context3) {
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function _callee2$(_context4) {
           while (1) {
-            switch (_context3.prev = _context3.next) {
+            switch (_context4.prev = _context4.next) {
               case 0:
-                _context3.next = 2;
-                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(_this7.checkDiagonal(tileData));
+                _context4.next = 2;
+                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(_this6.checkDiagonal(tileData, board));
 
               case 2:
-                diagonalMoves = _context3.sent;
+                diagonalMoves = _context4.sent;
                 diagonalMoves = diagonalMoves.filter(function (e) {
                   return e.type !== 'empty';
                 });
-                _context3.next = 6;
-                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(_this7.checkAxis(tileData));
+                _context4.next = 6;
+                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(_this6.checkAxis(tileData, board));
 
               case 6:
-                axisMoves = _context3.sent;
+                axisMoves = _context4.sent;
                 axisMoves = axisMoves.filter(function (e) {
                   return e.type !== 'empty';
-                }); // Check if any diagonal pieces can kill the king
+                });
+                console.log('axismoves: ', axisMoves);
+                console.log('diagonalMoves: ', diagonalMoves); // Check if any diagonal pieces can kill the king
 
                 if (diagonalMoves.length > 0) {
                   count = 0;
@@ -3147,57 +3286,51 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 }];
                 i = 0;
 
-              case 12:
+              case 14:
                 if (!(i < knightPositions.length)) {
-                  _context3.next = 19;
+                  _context4.next = 22;
                   break;
                 }
 
                 if (!(knightPositions[i].y > 7 || knightPositions[i].x > 7 || knightPositions[i].y < 0 || knightPositions[i].x < 0)) {
-                  _context3.next = 15;
+                  _context4.next = 17;
                   break;
                 }
 
-                return _context3.abrupt("continue", 16);
+                return _context4.abrupt("continue", 19);
 
-              case 15:
-                if (_this7.board[knightPositions[i].y][knightPositions[i].x].type === 'knight') {
+              case 17:
+                knight = board[knightPositions[i].y][knightPositions[i].x];
+
+                if (knight.type === 'knight' && knight.colour !== tileData.colour) {
                   resolve(true);
                 }
 
-              case 16:
+              case 19:
                 i++;
-                _context3.next = 12;
+                _context4.next = 14;
                 break;
 
-              case 19:
+              case 22:
                 // Check if there are any pawns
-                pawns = axisMoves.filter(function (e) {
+                pawns = [];
+                pawns.push.apply(pawns, _toConsumableArray(diagonalMoves.filter(function (e) {
                   return e.type === 'pawn';
-                });
+                })));
+                pawns.push.apply(pawns, _toConsumableArray(axisMoves.filter(function (e) {
+                  return e.type === 'pawn';
+                })));
 
                 if (pawns.length > 0) {
-                  if (_this7.player1 === _this7.user.id) {
+                  if (_this6.player1 === _this6.user.id) {
                     for (_i7 = 0; _i7 < pawns.length; _i7++) {
-                      if (pawns[_i7].position === {
-                        x: tileData.position.x - 1,
-                        y: tileData.position.y - 1
-                      } || pawns[_i7].position === {
-                        x: tileData.position.x + 1,
-                        y: tileData.position.y - 1
-                      }) {
+                      if (pawns[_i7].x === tileData.position.x - 1 && pawns[_i7].y === tileData.position.y - 1 || pawns[_i7].x === tileData.position.x + 1 && pawns[_i7].y === tileData.position.y - 1) {
                         resolve(true);
                       }
                     }
                   } else {
                     for (_i8 = 0; _i8 < pawns.length; _i8++) {
-                      if (pawns[_i8].position === {
-                        x: tileData.position.x + 1,
-                        y: tileData.position.y + 1
-                      } || pawns[_i8].position === {
-                        x: tileData.position.x - 1,
-                        y: tileData.position.y + 1
-                      }) {
+                      if (pawns[_i8].x === tileData.position.x + 1 && pawns[_i8].y === tileData.position.y + 1 || pawns[_i8].x === tileData.position.x - 1 && pawns[_i8].y === tileData.position.y + 1) {
                         resolve(true);
                       }
                     }
@@ -3206,9 +3339,9 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
                 resolve(false);
 
-              case 22:
+              case 27:
               case "end":
-                return _context3.stop();
+                return _context4.stop();
             }
           }
         });
@@ -3223,7 +3356,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
     }
   },
   mounted: function mounted() {
-    var _this8 = this;
+    var _this7 = this;
 
     console.log('Chess Component mounted.');
     this.checkGameState(); // Bind the mouse up to emptying possible moves, if the user tries to drop outside of the board.
@@ -3232,21 +3365,21 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
     Echo.join('game.' + this.lobby.url).listen('StartGameEvent', function (event) {
       console.log('new game: ', event.game);
-      _this8.board = event.game.board;
-      _this8.turn = event.game.turn;
+      _this7.board = event.game.board;
+      _this7.turn = event.game.turn;
 
-      _this8.addGameMessage("The game has started!");
+      _this7.addGameMessage("The game has started!");
     }).listen('RestartGameEvent', function (event) {
       console.log('restarting game');
-      _this8.board = null;
+      _this7.board = null;
 
-      _this8.addGameMessage("The game has been reset!");
+      _this7.addGameMessage("The game has been reset!");
     }).listen('GameMoveEvent', function (event) {
-      _this8.doGameMove(event.move);
+      _this7.doGameMove(event.move, true);
     }).listen('GameMessageEvent', function (event) {
       console.log('new game message: ', event.message);
 
-      _this8.addGameMessage(event.message);
+      _this7.addGameMessage(event.message);
     });
   }
 });
@@ -47313,7 +47446,7 @@ var render = function() {
             {
               on: {
                 click: function($event) {
-                  return _vm.initiateGame()
+                  return _vm.initiateGame(_vm.user.id, true)
                 }
               }
             },
@@ -47363,6 +47496,22 @@ var render = function() {
               }
             })
           ])
+        ])
+      : _vm._e(),
+    _vm._v(" "),
+    _vm.isChecked
+      ? _c("div", { staticClass: "pass" }, [
+          _c(
+            "button",
+            {
+              on: {
+                click: function($event) {
+                  return _vm.passTurn()
+                }
+              }
+            },
+            [_vm._v("Start Game")]
+          )
         ])
       : _vm._e()
   ])
