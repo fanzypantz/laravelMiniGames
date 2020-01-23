@@ -58,6 +58,7 @@
                 player1: null,
                 possibleMoves: [],
                 gameMove: null,
+                debug: true,
             }
         },
 
@@ -163,7 +164,8 @@
                 if (gameState !== null) {
                     this.board = gameState.board;
                     this.turn = gameState.turn;
-                    this.player1 = gameState.player1
+                    this.player1 = gameState.player1;
+                    this.score = gameState.score;
                 }
             },
 
@@ -194,11 +196,6 @@
 
             restartGame() {
                 this.initiateGame();
-            },
-
-            playerWon(player) {
-                console.log('player: ', player.playerNumber, ' won the game!');
-                this.victory = player;
             },
 
             sendGameMove(gameMove) {
@@ -255,7 +252,6 @@
                     // Then set new data
                     let gameMoveData = this.cleanCopy(gameMove);
                     let board = this.cleanCopy(this.board);
-                    console.log('gameMoveData: ', gameMoveData);
                     let oldPiece = gameMoveData.oldPiece;
                     let newPiece = gameMoveData.newPiece;
                     let king;
@@ -274,7 +270,6 @@
                     // Check if this new board state will result in the king still being in Check, reject if true
                     king = this.getKing(board);
                     if (this.isChecked && !isReceiver) {
-                        console.log('1: ', );
                         // You are checked and you are the one making a move
                         let isCheckedAfterMove = await this.checkKingTiles({
                             position: king.position,
@@ -290,19 +285,16 @@
                             this.isChecked = false;
                         }
                     } else if (!this.isChecked && isReceiver) {
-                        console.log('2: ', );
                         // You are not checked and you are just receiving opponent move
                         this.isChecked = await this.checkKingTiles({
                             position: king.position,
                             colour: king.colour,
                         }, board);
                         if (this.isChecked) {
-                            console.log('is checked: ', );
                             this.addGameMessage("Your king is now in check!");
                         }
                         this.board = board;
                     } else if (!this.isChecked && !isReceiver) {
-                        console.log('3: ', );
                         // You are not checked and you are the one making a move
                         let isCheckedAfterMove = await this.checkKingTiles({
                             position: king.position,
@@ -315,31 +307,26 @@
                         } else {
                             this.board = board;
                         }
-                    } else {
-                        console.log('4: ', );
                     }
                     // Check if the game was won before changing the turn
-                    this.checkIfKing(newPiece.type, this.turn);
-
-                    if (this.turn === this.user.id) {
-                        let opponent = this.getOpponentUser();
-                        this.addGameMessage('Opponents Turn');
-                        this.turn = opponent.id;
+                    if (newPiece.type === 'king') {
+                        this.handleWin(this.turn);
+                        return;
                     } else {
-                        this.addGameMessage('My Turn');
-                        this.turn = this.user.id;
+                        if (this.turn === this.user.id) {
+                            let opponent = this.getOpponentUser();
+                            this.addGameMessage('Opponents Turn');
+                            this.turn = opponent.id;
+                        } else {
+                            this.addGameMessage('My Turn');
+                            this.turn = this.user.id;
+                        }
                     }
 
                     // Check if king has been put in check or checkmate
                     this.checkMate(king, board);
                     resolve(true);
                 });
-            },
-
-            checkIfKing(target, attacker) {
-                if (target === 'king') {
-                    this.handleWin(attacker);
-                }
             },
 
             handleWin(attacker) {
@@ -363,7 +350,16 @@
                 let possibleMoves = [];
                 let diagonalMoves = [];
                 let axisMoves = [];
-                console.log('tileData: ', tileData);
+
+                if (this.debug) {
+                    for (let y = 0; y < this.board.length; y++) {
+                        for (let x = 0; x < this.board[y].length; x++) {
+                            possibleMoves.push(this.board[y][x].position);
+                        }
+                    }
+                    this.possibleMoves = possibleMoves;
+                    return;
+                }
 
                 switch (tileData.type) {
                     case "knight":
@@ -685,8 +681,6 @@
                     diagonalMoves = diagonalMoves.filter(e => e.type !== 'empty');
                     let axisMoves = await this.checkAxis(tileData, board);
                     axisMoves = axisMoves.filter(e => e.type !== 'empty');
-                    console.log('axismoves: ', axisMoves);
-                    console.log('diagonalMoves: ', diagonalMoves);
                     // Check if any diagonal pieces can kill the king
                     if (diagonalMoves.length > 0) {
                         let count = 0;
@@ -793,6 +787,8 @@
                     console.log('new game: ', event.game);
                     this.board = event.game.board;
                     this.turn = event.game.turn;
+                    this.player1 = event.game.player1;
+                    this.score = event.game.score;
                     this.addGameMessage(`The game has started!`);
                 })
                 .listen('RestartGameEvent', (event) => {
