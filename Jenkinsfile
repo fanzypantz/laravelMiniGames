@@ -3,7 +3,8 @@ pipeline {
   stages {
     stage('Init') {
       steps {
-        sh '''php artisan key:generate
+        sh '''composer install
+php artisan key:generate
 cp .env.example .env
 
 '''
