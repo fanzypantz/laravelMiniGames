@@ -20,7 +20,7 @@ if test -f "$FILE"; then
 fi
 tar -czvf laravelMiniGames.tar.gz laravelMiniGames_master/ --exclude=/node_modules --exclude=/vendor
 whoami
-mv laravelMiniGames.tar.gz /var/www/laravel/personal/laravelMiniGame/laravelMiniGames.tar.gz'''
+sudo mv laravelMiniGames.tar.gz /var/www/laravel/personal/laravelMiniGame/laravelMiniGames.tar.gz'''
       }
     }
 
