@@ -6,7 +6,16 @@ pipeline {
         sh '''npm install
 composer install
 cp .env.example .env
-php artisan key:generate'''
+
+'''
+      }
+    }
+
+    stage('Deploy') {
+      steps {
+        sh '''cd ..
+rm *.gz
+tar -czvf laravelMiniGames.tar.gz /laravelMiniGames_master'''
       }
     }
 
