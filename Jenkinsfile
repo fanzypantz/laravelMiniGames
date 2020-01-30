@@ -15,7 +15,7 @@ php artisan key:generate
     stage('Copy Build') {
       steps {
         sh '''cd ..
-sudo rm -rf /var/www/laravel/personal/laravelMiniGame/{*,.*}
+sudo rm -rf /var/www/laravel/personal/laravelMiniGame/*
 sudo cp -a laravelMiniGames_master/. /var/www/laravel/personal/laravelMiniGame'''
       }
     }
