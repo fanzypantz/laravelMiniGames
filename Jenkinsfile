@@ -27,8 +27,8 @@ sudo mv laravelMiniGames.tar.gz /var/www/laravel/personal/laravelMiniGame/larave
     stage('Deploy') {
       steps {
         sh '''cd /var/www/laravel/personal/laravelMiniGame
-tar -xzvf laravelMiniGames.tar.gz
-rm laravelMiniGames.tar.gz
+sudo tar -xzvf laravelMiniGames.tar.gz
+sudo rm laravelMiniGames.tar.gz
 
 '''
       }
