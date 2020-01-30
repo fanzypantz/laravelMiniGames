@@ -18,7 +18,7 @@ FILE=laravelMiniGames.tar.gz
 if test -f "$FILE"; then
     rm laravelMiniGames.tar.gz
 fi
-tar -czvf laravelMiniGames.tar.gz /laravelMiniGames_master'''
+tar -czvf laravelMiniGames.tar.gz laravelMiniGames_master/'''
       }
     }
 
