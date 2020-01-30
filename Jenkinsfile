@@ -14,23 +14,13 @@ php artisan key:generate
     stage('Prepare Zip') {
       steps {
         sh '''cd ..
-FILE=laravelMiniGames.tar.gz
-if test -f "$FILE"; then
-    rm laravelMiniGames.tar.gz
-fi
-sudo tar -czvf laravelMiniGames.tar.gz --exclude=\'node_modules\' --exclude=\'vendor\' laravelMiniGames_master/.
-sudo mv laravelMiniGames.tar.gz /var/www/laravel/personal/laravelMiniGame/laravelMiniGames.tar.gz
-'''
+cp -a laravelMiniGames_master/. /var/www/laravel/personal/laravelMiniGame'''
       }
     }
 
     stage('Deploy') {
       steps {
-        sh '''cd /var/www/laravel/personal/laravelMiniGame
-sudo tar -xzvf laravelMiniGames.tar.gz
-sudo rm laravelMiniGames.tar.gz
-
-'''
+        sh 'php -v'
       }
     }
 
