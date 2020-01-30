@@ -17,8 +17,10 @@ php artisan key:generate
 if test -f "$FILE"; then
     rm laravelMiniGames.tar.gz
 fi
-tar -czvf laravelMiniGames.tar.gz --exclude=\'node_modules\' --exclude=\'vendor\' .
-sudo mv laravelMiniGames.tar.gz /var/www/laravel/personal/laravelMiniGame/laravelMiniGames.tar.gz'''
+shopt -s dotglob
+tar -czvf laravelMiniGames.tar.gz --exclude=\'node_modules\' --exclude=\'vendor\' *
+sudo mv laravelMiniGames.tar.gz /var/www/laravel/personal/laravelMiniGame/laravelMiniGames.tar.gz
+shopt -u dotglob'''
       }
     }
 
