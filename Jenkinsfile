@@ -13,7 +13,7 @@ php artisan key:generate
 
     stage('Prepare Zip') {
       steps {
-        sh '''cd..
+        sh '''cd ..
 FILE=laravelMiniGames.tar.gz
 if test -f "$FILE"; then
     rm laravelMiniGames.tar.gz
