@@ -11,10 +11,10 @@ php artisan key:generate
       }
     }
 
-    stage('Prepare Zip') {
+    stage('Copy Build') {
       steps {
         sh '''cd ..
-cp -a laravelMiniGames_master/. /var/www/laravel/personal/laravelMiniGame'''
+sudo cp -a laravelMiniGames_master/. /var/www/laravel/personal/laravelMiniGame'''
       }
     }
 
