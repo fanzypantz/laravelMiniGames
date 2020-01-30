@@ -6,7 +6,7 @@
 
     <div class="index-container">
         <h1>Welcome to my small Minigame site. It will have all sorts of minigames in the future!</h1>
-        <p>This is a hobby project of mine to get better at Laravel and Vue.</p>
+        <p>This is a hobby project of mine to get better at Laravel and Vue. Test.</p>
         @guest
             <div class="index-auth">
                 <a class="btn" href="{{ route('register') }}">
