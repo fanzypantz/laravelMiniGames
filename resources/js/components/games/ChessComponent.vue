@@ -21,7 +21,7 @@
         </div>
 
         <!--Buttons-->
-        <div v-if="board === null" class="buttons">
+        <div v-if="board === null && connectedPlayers.length === 2" class="buttons">
             <button @click="initiateGame(user.id, true)">Start Game</button>
         </div>
 
@@ -159,13 +159,29 @@
                 Game control logic
             */
 
-            checkGameState() {
+            async checkGameState() {
                 let gameState = JSON.parse(this.lobby.gameState);
                 if (gameState !== null) {
                     this.board = gameState.board;
                     this.turn = gameState.turn;
                     this.player1 = gameState.player1;
                     this.score = gameState.score;
+
+                    // Check if king is in check
+                    let king = this.getKing(this.board);
+                    this.isChecked = await this.checkKingTiles({
+                        position: king.position,
+                        colour: king.colour,
+                    }, this.board);
+
+                    if (this.isChecked) {
+                        this.checkMate(king, this.board).then((inCheckMate) => {
+                            if (inCheckMate) {
+                                // If this move results in your king being in check mate end the game
+                                this.handleWin(this.turn, 'Checkmate');
+                            }
+                        });
+                    }
                 }
             },
 
@@ -277,8 +293,15 @@
                         }, board);
                         // If king is checked after trying the move reject, if not do the move and unset check
                         if (isCheckedAfterMove) {
-                            reject('King is still in check');
-                            this.addGameMessage("Your king will still be in check after this move!");
+                            this.checkMate(king, board).then((inCheckMate) => {
+                                if (inCheckMate) {
+                                    // If this move results in your king being in check mate end the game
+                                    this.handleWin(this.turn, 'Checkmate');
+                                } else {
+                                    reject('Your king is still in check');
+                                    this.addGameMessage("Your king will still be in check after this move!");
+                                }
+                            });
                             return;
                         } else {
                             this.board = board;
@@ -291,6 +314,12 @@
                             colour: king.colour,
                         }, board);
                         if (this.isChecked) {
+                            this.checkMate(king, board).then((inCheckMate) => {
+                                if (inCheckMate) {
+                                    // If this move results in your king being in check mate end the game
+                                    this.handleWin(this.turn, 'Checkmate');
+                                }
+                            });
                             this.addGameMessage("Your king is now in check!");
                         }
                         this.board = board;
@@ -310,7 +339,7 @@
                     }
                     // Check if the game was won before changing the turn
                     if (newPiece.type === 'king') {
-                        this.handleWin(this.turn);
+                        this.handleWin(this.turn, 'king was killed');
                         return;
                     } else {
                         if (this.turn === this.user.id) {
@@ -322,14 +351,11 @@
                             this.turn = this.user.id;
                         }
                     }
-
-                    // Check if king has been put in check or checkmate
-                    this.checkMate(king, board);
                     resolve(true);
                 });
             },
 
-            handleWin(attacker) {
+            handleWin(attacker, reason) {
                 // Just restart the game if game won
                 if (attacker === this.user.id) {
                     // Just let the winner send the request to start a new game
@@ -620,59 +646,73 @@
                 this.possibleMoves = [];
             },
 
-            async checkMate(king, board) {
-                let positions = [
-                    {
-                        x: king.position.x - 1,
-                        y: king.position.y - 1
-                    },
-                    {
-                        x: king.position.x,
-                        y: king.position.y - 1
-                    },
-                    {
-                        x: king.position.x + 1,
-                        y: king.position.y - 1
-                    },
-                    {
-                        x: king.position.x + 1,
-                        y: king.position.y
-                    },
-                    {
-                        x: king.position.x + 1,
-                        y: king.position.y + 1
-                    },
-                    {
-                        x: king.position.x,
-                        y: king.position.y + 1
-                    },
-                    {
-                        x: king.position.x - 1,
-                        y: king.position.y + 1
-                    },
-                    {
-                        x: king.position.x - 1,
-                        y: king.position.y
-                    },
-                ];
+            checkMate(king, board) {
+                return new Promise(async (resolve) => {
+                    let positions = [
+                        {
+                            x: king.position.x - 1,
+                            y: king.position.y - 1
+                        },
+                        {
+                            x: king.position.x,
+                            y: king.position.y - 1
+                        },
+                        {
+                            x: king.position.x + 1,
+                            y: king.position.y - 1
+                        },
+                        {
+                            x: king.position.x + 1,
+                            y: king.position.y
+                        },
+                        {
+                            x: king.position.x + 1,
+                            y: king.position.y + 1
+                        },
+                        {
+                            x: king.position.x,
+                            y: king.position.y + 1
+                        },
+                        {
+                            x: king.position.x - 1,
+                            y: king.position.y + 1
+                        },
+                        {
+                            x: king.position.x - 1,
+                            y: king.position.y
+                        },
+                    ];
+                    let ownPieces = 0;
+                    let checkMateCount = 0;
+                    for (const position of positions) {
+                        if (position.x > 7 || position.y > 7 || position.x < 0 || position.y < 0) {
+                            // If the tile is outside of the board the king can't move there and counts
+                            checkMateCount++;
+                            continue;
+                        }
+                        // If the tile he is trying to reach is blocked by the same colour it also counts
+                        // as he can't move there
+                        if (board[position.y][position.x].colour === king.colour) {
+                            ownPieces++;
+                            continue;
+                        }
 
-                let checkMateCount = 0;
-                for (const position of positions) {
-                    if (position.x > 7 || position.y > 7 || position.x < 0 || position.y < 0) {
-                        continue;
+                        // If the tile around the king will also be check, add to the count
+                        if (await this.checkKingTiles({
+                            position: position,
+                            colour: king.colour
+                        }, board)){
+                            checkMateCount++;
+                        }
                     }
-                    // If the tile around the king will also be check, add to the count
-                    if (await this.checkKingTiles({
-                        position: position,
-                        colour: king.colour
-                    }, board)){
-                        checkMateCount++;
-                    }
-                }
 
-                if (checkMateCount === 8) {
-                    this.handleWin(this.getOpponentUser().id);
-                }
+                    if (checkMateCount === 8 - ownPieces) {
+                        resolve(true);
+                    } else {
+                        resolve(false)
+                    }
+                });
+
             },
 
             checkKingTiles(tileData, board) {

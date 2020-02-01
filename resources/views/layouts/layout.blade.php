@@ -31,7 +31,6 @@
             @endif
             @guest
                 <a class="nav-item btn" href="{{ route('register') }}">
-
                     <strong>Sign up</strong>
                 </a>
                 <a class="nav-item btn" href="{{ route('login') }}">Log in</a>
