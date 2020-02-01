@@ -23,7 +23,9 @@ sudo cp -a laravelMiniGames_master/. /var/www/laravel/personal/laravelMiniGame''
     stage('Deploy') {
       steps {
         sh '''sudo chown -R www-data:www-data /var/www
-sudo service apache2 reload'''
+sudo service apache2 reload
+cd /var/www/laravel/personal/laravelMiniGame
+php artisan migrate'''
       }
     }
 
