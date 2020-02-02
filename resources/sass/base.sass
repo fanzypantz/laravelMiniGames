@@ -69,12 +69,18 @@ nav
             background-color: $bg
 
 .menu-button
+    z-index: 200
     position: absolute
     width: 100px
     top: 2%
     left: 5%
     opacity: 0
     display: none
+    transition: transform 250ms ease
+
+    &:hover
+        transform: scale(1)
+
 
 .container
     position: relative

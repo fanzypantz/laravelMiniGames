@@ -59,10 +59,10 @@
                 gameModes: [
                     'Game Of Ladders',
                     'Chess',
-                    'Checkers',
-                    'Tic Tac Toe',
-                    'BattleShip',
-                    'Draw My Thing'
+                    'Checkers SoonTM',
+                    'Tic Tac Toe SoonTM',
+                    'BattleShip SoonTM',
+                    'Draw My Thing SoonTM'
                 ],
             }
         },

@@ -21,6 +21,16 @@
         </div>
 
         <!--Buttons-->
+        <img v-if="!isMenuOpen" id="menu-button-game" class="menu-button" src="/images/icons/menu.svg" alt="" @click="toggleMenu()">
+        <div v-if="isMenuOpen" class="game-menu">
+            <button @click="initiateGame(user.id, true)">Restart Game</button>
+            <p class="game-score">Your Score: {{ user.name }}</p>
+            <p class="game-score">Wins: {{ getScore(user.id) }}</p>
+            <p class="game-score">Opponent Score: {{ getOpponentUser().name }}</p>
+            <p class="game-score">Wins: {{ getScore(getOpponentUser().id) }}</p>
+            <button @click="toggleMenu()">Close Menu</button>
+        </div>
+
         <div v-if="board === null && connectedPlayers.length === 2" class="buttons">
             <button @click="initiateGame(user.id, true)">Start Game</button>
         </div>
@@ -35,10 +45,6 @@
                 <img v-bind:src="getPieceImage('bishop')" alt="" @click="promote('bishop')"/>
             </div>
         </div>
-
-        <div v-if="isChecked" class="pass">
-            <button @click="passTurn()">Start Game</button>
-        </div>
     </div>
 
 </template>
@@ -50,6 +56,7 @@
     export default {
         data() {
             return {
+                isMenuOpen: false,
                 isChecked: false,
                 isPromoting: false,
                 board: null,
@@ -58,7 +65,7 @@
                 player1: null,
                 possibleMoves: [],
                 gameMove: null,
-                debug: true,
+                debug: false,
             }
         },
 
@@ -134,6 +141,10 @@
                 return this.connectedPlayers.find(e => e.id !== this.user.id);
             },
 
+            getScore(id) {
+                return this.score[id];
+            },
+
             getPieceImage(name) {
                 if (name) {
                     return `/images/icons/chess/${name}.svg`;
@@ -153,6 +164,10 @@
 
             cleanCopy(object) {
                 return JSON.parse(JSON.stringify(object))
+            },
+
+            toggleMenu() {
+                this.isMenuOpen = !this.isMenuOpen;
             },
 
             /*
@@ -175,17 +190,23 @@
                     }, this.board);
 
                     if (this.isChecked) {
-                        this.checkMate(king, this.board).then((inCheckMate) => {
-                            if (inCheckMate) {
-                                // If this move results in your king being in check mate end the game
-                                this.handleWin(this.turn, 'Checkmate');
-                            }
-                        });
+                        setTimeout(() => {
+                            this.checkMate(king, this.board).then((inCheckMate) => {
+                                if (inCheckMate) {
+                                    // If this move results in your king being in check mate end the game
+                                    let opponent = this.getOpponentUser();
+                                    if (opponent !== undefined) {
+                                        this.handleWin(opponent.id, 'Checkmate Refresh');
+                                    }
+                                }
+                            });
+                        }, 1000)
                     }
                 }
             },
 
             initiateGame(player1, newGame) {
+                console.log('initiating game: ', );
                 window.axios.post(`/game/startGame/${this.lobby.url}`, {
                     game: this.startGame(player1, newGame),
                 });
@@ -196,6 +217,7 @@
                 this.board = this.initiateBoard();
                 this.turn = player1;
                 this.player1 = player1;
+                this.isChecked = false;
                 if (newGame) {
                     this.score[this.user.id] = 0;
                     this.score[this.getOpponentUser().id] = 0;
@@ -296,7 +318,7 @@
                             this.checkMate(king, board).then((inCheckMate) => {
                                 if (inCheckMate) {
                                     // If this move results in your king being in check mate end the game
-                                    this.handleWin(this.turn, 'Checkmate');
+                                    this.handleWin(this.getOpponentUser().id, 'Checkmate');
                                 } else {
                                     reject('Your king is still in check');
                                     this.addGameMessage("Your king will still be in check after this move!");
@@ -317,7 +339,7 @@
                             this.checkMate(king, board).then((inCheckMate) => {
                                 if (inCheckMate) {
                                     // If this move results in your king being in check mate end the game
-                                    this.handleWin(this.turn, 'Checkmate');
+                                    this.handleWin(this.getOpponentUser().id, 'Checkmate');
                                 }
                             });
                             this.addGameMessage("Your king is now in check!");
@@ -359,6 +381,8 @@
                 // Just restart the game if game won
                 if (attacker === this.user.id) {
                     // Just let the winner send the request to start a new game
+                    this.initiateGame(attacker, false);
+                } else if (reason === 'Checkmate') {
                     this.initiateGame(attacker, false);
                 }
             },
@@ -445,12 +469,20 @@
                             {y: tileData.position.y + 1, x: tileData.position.x - 1},
                             {y: tileData.position.y, x: tileData.position.x - 1},
                         ];
+                        let king = this.getKing(this.board);
+
                         for (let i = 0; i < kingPositions.length; i++) {
                             if (kingPositions[i].y < 0 || kingPositions[i].x < 0 || kingPositions[i].y > 7 || kingPositions[i].x > 7) {
                                 continue
                             }
                             if (this.board[kingPositions[i].y][kingPositions[i].x].colour !== tileData.colour) {
-                                possibleMoves.push(kingPositions[i]);
+                                let isCheckedAfterMove = await this.checkKingTiles({
+                                    position: kingPositions[i],
+                                    colour: king.colour,
+                                }, this.board);
+                                if (!isCheckedAfterMove) {
+                                    possibleMoves.push(kingPositions[i]);
+                                }
                             }
                         }
                         break;
@@ -829,14 +861,17 @@
                     this.turn = event.game.turn;
                     this.player1 = event.game.player1;
                     this.score = event.game.score;
+                    this.isChecked = false;
                     this.addGameMessage(`The game has started!`);
                 })
                 .listen('RestartGameEvent', (event) => {
                     console.log('restarting game');
                     this.board = null;
+                    this.isChecked = false;
                     this.addGameMessage(`The game has been reset!`);
                 })
                 .listen('GameMoveEvent', (event) => {
+                    console.log('move event: ', event);
                     this.doGameMove(event.move, true);
                 }).listen('GameMessageEvent', (event) => {
                     console.log('new game message: ', event.message);

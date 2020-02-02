@@ -89,6 +89,42 @@
         margin: 0
         animation: hide-text 10s ease
 
+#menu-button-game
+    display: block
+    opacity: 1
+    top: 50%
+    left: 2%
+    transform: translateY(-50%)
+    transform-origin: center
+
+    &:hover
+        cursor: pointer
+        transform: translateY(-50%) scale(1.2)
+
+.game-menu
+    position: absolute
+    display: flex
+    flex-direction: column
+    justify-content: center
+    align-items: center
+    top: 0
+    left: 0
+    width: 20%
+    height: 100vh
+    background: $hover
+
+    .game-score
+        color: $bg
+        padding-left: 25%
+        width: 75%
+        line-height: 40px
+        height: 40px
+        margin: 0
+
+    button
+        width: 100%
+        margin-top: 10px
+
 @keyframes hide
     90%
         min-height: 75px
