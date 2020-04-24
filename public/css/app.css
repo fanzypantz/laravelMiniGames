@@ -1153,7 +1153,13 @@ nav .nav-item:hover {
 }
 
 .chess .tile-number {
-  color: red !important;
+  color: #245c9b !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  top: 5%;
+  left: 5%;
+  font-size: 14px !important;
+  text-shadow: none !important;
 }
 
 .white-piece {

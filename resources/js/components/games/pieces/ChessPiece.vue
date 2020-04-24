@@ -12,10 +12,8 @@
             alt=""
             @dragstart="(e) => handleDragStart(e, tileData)"
         >
-        <p class="tile-number">{{tileData.position.x}}-{{tileData.position.y}}</p>
-<!--        <p class="tile-number" v-bind:style="{-->
-<!--            top: '2%'-->
-<!--        }">{{canDrag}}</p>-->
+<!--        <p class="tile-number">{{tileData.position.x + 1}}-{{tileData.position.y}}</p>-->
+
     </div>
 
 </template>
