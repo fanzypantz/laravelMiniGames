@@ -117,6 +117,7 @@
             return {
                 isSelectingCharacter: false,
                 isDragging: false,
+                isRolling: false,
                 characters: this.gameOfLaddersConfig.characters,
                 selectedCharacter: null,
                 opponentCharacter: null,
@@ -461,40 +462,47 @@
             },
 
             doGameMove(roll) {
-                if (this.turn === this.game.player1.name) {
+                if (this.game.turn === this.game.player1.name) {
                     this.movePlayerCheck(this.game.player1, this.game.player2, roll);
-                } else if (this.turn === this.game.player2.name) {
+                } else if (this.game.turn === this.game.player2.name) {
                     this.movePlayerCheck(this.game.player2, this.game.player1, roll);
                 }
             },
 
             movePlayerCheck(player, opponent, roll) {
                 console.log('playerMove: ', player, opponent, roll);
+                if (roll === 0) {
+                    return;
+                }
                 if (player.tile + roll <= 99) {
                     console.log('roll is under 99: ', );
                     // Roll is lower than max tile so can move
                     this.movePlayer(player, roll).then(() => {
                         this.checkTrapLadder(player).then(() => {
-                            if (this.turn === this.selectedCharacter.name) {
+                            if (this.game.turn === this.selectedCharacter.name) {
                                 this.sendGameMove(roll);
                             }
                             // If roll is 6, don't change turn
                             if (roll !== 6) {
-                                this.turn = opponent.name;
+                                this.game.turn = opponent.name;
                             } else {
                                 this.$emit('addGameMessage', `${player.name} rolled a 6! They get another turn.`);
                             }
+                            this.isRolling = false;
                         });
 
                     });
                 } else {
                     // Rolled too high to win, will stay here until exact roll is met, loses his turn
                     if (roll !== 6) {
-                        this.turn = opponent.name;
+                        this.game.turn = opponent.name;
+                        this.sendGameMove(0);
+                        this.isRolling = false;
                     } else {
                         this.$emit('addGameMessage', `${player.name} rolled a 6! They get another turn.`);
                     }
                 }
+
             },
 
             movePlayer(player, roll, moveReason) {
@@ -514,18 +522,18 @@
                     this.animatePlayer(player, roll).then(() => {
                         // Set all the new data after the animation is done
                         // Move player to his new place on the board, remove him from the old tile
-                        this.board[player.tile].pieces = this.board[player.tile].pieces.filter(e => e.name !== player.name);
-                        this.board[player.tile + roll].pieces.push({name: player.name, id: player.playerNumber});
+                        this.game.board[player.tile].pieces = this.game.board[player.tile].pieces.filter(e => e.name !== player.name);
+                        this.game.board[player.tile + roll].pieces.push({name: player.name, id: player.playerNumber});
 
                         // Add the roll to his current position
                         if (player.playerNumber === 1) {
-                            this.game.player1.position = this.board[player.tile + roll].position;
+                            this.game.player1.position = this.game.board[player.tile + roll].position;
                             this.game.player1.tile += roll;
                             if (this.game.player1.tile === 99) {
                                 this.playerWon(this.game.player1);
                             }
                         } else {
-                            this.game.player2.position = this.board[player.tile + roll].position;
+                            this.game.player2.position = this.game.board[player.tile + roll].position;
                             this.game.player2.tile += roll;
                             if (this.game.player2.tile === 99) {
                                 this.playerWon(this.game.player1);
@@ -539,7 +547,7 @@
             animatePlayer(player, roll) {
                 return new Promise ((resolve) => {
                     let oldPosition = player.position;
-                    let newPosition = this.board[player.tile + roll].position;
+                    let newPosition = this.game.board[player.tile + roll].position;
                     let tileHeight = (window.innerHeight * 0.8) / 10;
 
                     let x = newPosition.x - oldPosition.x;
@@ -577,10 +585,9 @@
 
             },
 
-
             checkTrap(player) {
                 return new Promise((resolve, reject) => {
-                    let trap = this.board[player.tile].trap;
+                    let trap = this.game.board[player.tile].trap;
 
                     if (trap !== null && trap.start !== undefined) {
                         this.movePlayer(player, trap.start, this.generateTrapMessage(player)).then(() => {
@@ -595,7 +602,7 @@
 
             checkLadder(player) {
                 return new Promise((resolve) => {
-                    let ladder = this.board[player.tile].ladder;
+                    let ladder = this.game.board[player.tile].ladder;
 
                     if (ladder !== null && ladder.start !== undefined) {
                         this.movePlayer(player, ladder.start, this.generateLadderMessage(player)).then(() => {
@@ -628,7 +635,7 @@
 
             startDrag() {
                 if (this.game !== null) {
-                    if (this.turn === this.selectedCharacter.name) {
+                    if (this.game.turn === this.selectedCharacter.name && !this.isRolling) {
                         this.isDragging = true;
                         this.startRoll();
                     }
@@ -636,9 +643,10 @@
             },
 
             stopDrag() {
-                if (this.game !== null && this.isDragging) {
-                    if (this.turn === this.selectedCharacter.name) {
+                if (this.game !== null && this.isDragging && !this.isRolling) {
+                    if (this.game.turn === this.selectedCharacter.name) {
                         this.isDragging = false;
+                        this.isRolling = true;
                         this.stopRoll();
                     }
                 }

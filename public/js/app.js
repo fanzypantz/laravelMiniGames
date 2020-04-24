@@ -3627,6 +3627,7 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
     return {
       isSelectingCharacter: false,
       isDragging: false,
+      isRolling: false,
       characters: this.gameOfLaddersConfig.characters,
       selectedCharacter: null,
       opponentCharacter: null,
@@ -3983,9 +3984,9 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
       });
     },
     doGameMove: function doGameMove(roll) {
-      if (this.turn === this.game.player1.name) {
+      if (this.game.turn === this.game.player1.name) {
         this.movePlayerCheck(this.game.player1, this.game.player2, roll);
-      } else if (this.turn === this.game.player2.name) {
+      } else if (this.game.turn === this.game.player2.name) {
         this.movePlayerCheck(this.game.player2, this.game.player1, roll);
       }
     },
@@ -3994,27 +3995,35 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
       console.log('playerMove: ', player, opponent, roll);
 
+      if (roll === 0) {
+        return;
+      }
+
       if (player.tile + roll <= 99) {
         console.log('roll is under 99: '); // Roll is lower than max tile so can move
 
         this.movePlayer(player, roll).then(function () {
           _this5.checkTrapLadder(player).then(function () {
-            if (_this5.turn === _this5.selectedCharacter.name) {
+            if (_this5.game.turn === _this5.selectedCharacter.name) {
               _this5.sendGameMove(roll);
             } // If roll is 6, don't change turn
 
 
             if (roll !== 6) {
-              _this5.turn = opponent.name;
+              _this5.game.turn = opponent.name;
             } else {
               _this5.$emit('addGameMessage', "".concat(player.name, " rolled a 6! They get another turn."));
             }
+
+            _this5.isRolling = false;
           });
         });
       } else {
         // Rolled too high to win, will stay here until exact roll is met, loses his turn
         if (roll !== 6) {
-          this.turn = opponent.name;
+          this.game.turn = opponent.name;
+          this.sendGameMove(0);
+          this.isRolling = false;
         } else {
           this.$emit('addGameMessage', "".concat(player.name, " rolled a 6! They get another turn."));
         }
@@ -4039,25 +4048,25 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
         _this6.animatePlayer(player, roll).then(function () {
           // Set all the new data after the animation is done
           // Move player to his new place on the board, remove him from the old tile
-          _this6.board[player.tile].pieces = _this6.board[player.tile].pieces.filter(function (e) {
+          _this6.game.board[player.tile].pieces = _this6.game.board[player.tile].pieces.filter(function (e) {
             return e.name !== player.name;
           });
 
-          _this6.board[player.tile + roll].pieces.push({
+          _this6.game.board[player.tile + roll].pieces.push({
             name: player.name,
             id: player.playerNumber
           }); // Add the roll to his current position
 
 
           if (player.playerNumber === 1) {
-            _this6.game.player1.position = _this6.board[player.tile + roll].position;
+            _this6.game.player1.position = _this6.game.board[player.tile + roll].position;
             _this6.game.player1.tile += roll;
 
             if (_this6.game.player1.tile === 99) {
               _this6.playerWon(_this6.game.player1);
             }
           } else {
-            _this6.game.player2.position = _this6.board[player.tile + roll].position;
+            _this6.game.player2.position = _this6.game.board[player.tile + roll].position;
             _this6.game.player2.tile += roll;
 
             if (_this6.game.player2.tile === 99) {
@@ -4074,7 +4083,7 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
       return new Promise(function (resolve) {
         var oldPosition = player.position;
-        var newPosition = _this7.board[player.tile + roll].position;
+        var newPosition = _this7.game.board[player.tile + roll].position;
         var tileHeight = window.innerHeight * 0.8 / 10;
         var x = newPosition.x - oldPosition.x;
         var y = newPosition.y - oldPosition.y;
@@ -4116,7 +4125,7 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
       var _this9 = this;
 
       return new Promise(function (resolve, reject) {
-        var trap = _this9.board[player.tile].trap;
+        var trap = _this9.game.board[player.tile].trap;
 
         if (trap !== null && trap.start !== undefined) {
           _this9.movePlayer(player, trap.start, _this9.generateTrapMessage(player)).then(function () {
@@ -4131,7 +4140,7 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
       var _this10 = this;
 
       return new Promise(function (resolve) {
-        var ladder = _this10.board[player.tile].ladder;
+        var ladder = _this10.game.board[player.tile].ladder;
 
         if (ladder !== null && ladder.start !== undefined) {
           _this10.movePlayer(player, ladder.start, _this10.generateLadderMessage(player)).then(function () {
@@ -4162,16 +4171,17 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
     },
     startDrag: function startDrag() {
       if (this.game !== null) {
-        if (this.turn === this.selectedCharacter.name) {
+        if (this.game.turn === this.selectedCharacter.name && !this.isRolling) {
           this.isDragging = true;
           this.startRoll();
         }
       }
     },
     stopDrag: function stopDrag() {
-      if (this.game !== null && this.isDragging) {
-        if (this.turn === this.selectedCharacter.name) {
+      if (this.game !== null && this.isDragging && !this.isRolling) {
+        if (this.game.turn === this.selectedCharacter.name) {
           this.isDragging = false;
+          this.isRolling = true;
           this.stopRoll();
         }
       }
