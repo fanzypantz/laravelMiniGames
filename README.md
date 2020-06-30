@@ -1,4 +1,6 @@
-# GameOfLadders
+# Minigames app
+
+This repo contains an app that have multiple minigames including chess and a games of thrones inspired snakes and ladders game.
  
 ### Prerequisites
 
